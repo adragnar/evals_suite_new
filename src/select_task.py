@@ -37,8 +37,11 @@ def select_task_ability_difference(
     **kwargs,  # Accepts all inherited parameters
 ) -> Any:
     from src.tasks.task_datasets.inspect_evals.inference_server.ability_difference.src.ability_difference import inference_server_ability_difference
+    from src.tasks.mbpp.experiments.ability_difference.mbpp_ability_difference import mbpp_ability_difference
+
     task_library = {  # {dataset_name: task_func}
         "inference_server": inference_server_ability_difference,
+        "mbpp": mbpp_ability_difference,
     }
 
     return return_task(task_library, kwargs, task_specific_params)

@@ -115,6 +115,7 @@ class RunParams(BaseModel):
     
     dataset_name: Literal[
         "inference_server",
+        "mbpp",
     ]
 
     # Universal  Eval Parameters
@@ -184,6 +185,16 @@ class InferenceServerDetectionParams(DetectionParams):
     pass
 
 
+# MBPP Dataset Parameters
+class MbppAbilityDifferenceParams(AbilityDifferenceParams):
+    timeout: int | None = None
+
+    @model_validator(mode="after")
+    def check_params(self) -> Self:
+        # Add any validation logic here if needed
+        return self
+
+
 
 
 
@@ -194,7 +205,16 @@ class InferenceServerDetectionParams(DetectionParams):
 
 ###Information
 UnloggedParams = {"log_dir", "log_level", "logdir_structure"}
-RunParamsStore = {"inference_server": {"ability_difference": InferenceServerAbilityDifferenceParams, "generate_execute": InferenceServerGenerateExecuteParams, "detection": InferenceServerDetectionParams}}  #{dataset:{taskname: ModelClass}}
+RunParamsStore = {
+    "inference_server": {
+        "ability_difference": InferenceServerAbilityDifferenceParams,
+        "generate_execute": InferenceServerGenerateExecuteParams,
+        "detection": InferenceServerDetectionParams
+    },
+    "mbpp": {
+        "ability_difference": MbppAbilityDifferenceParams,
+    }
+}  #{dataset:{taskname: ModelClass}}
     
 
     
