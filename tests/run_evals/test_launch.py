@@ -10,6 +10,8 @@ import threading
 import json
 from typing import List
 
+from dotenv import load_dotenv
+load_dotenv()
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))

@@ -176,7 +176,7 @@ class InferenceServerAbilityDifferenceParams(AbilityDifferenceParams):
         return self
 
 class InferenceServerGenerateExecuteParams(GenerateExecuteParams):
-    api_difficulty: Literal["basic"]
+    difficulty: Literal["basic", "intermediate"]
     timeout: int
 
 

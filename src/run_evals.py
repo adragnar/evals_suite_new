@@ -7,6 +7,8 @@ from typing import Literal
 
 from inspect_ai import eval
 from pydantic import ValidationError
+from dotenv import load_dotenv
+load_dotenv()
 
 from src.master_params import RunParamsStore, UnloggedParams, get_own_fields, get_inherited_experiment_fields
 from src.select_task import SelectTaskStore
