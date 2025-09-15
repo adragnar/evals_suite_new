@@ -3,6 +3,9 @@ from typing import List
 
 
 REPO_ROOT = "/Users/RobertAdragna/Documents/MATS/evals_suite_new"
+RESULTS_DIR = f"{REPO_ROOT}/results"
+TEST_RESULTS_DIR = f"{REPO_ROOT}/tests/results"
+
 
 TRASH_LOGS_DIR = f"{REPO_ROOT}/tests/trash_logs"
 

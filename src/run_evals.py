@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 from typing import Literal
+import csv
 
 from inspect_ai import eval
 from pydantic import ValidationError
@@ -12,13 +13,16 @@ load_dotenv()
 
 from src.master_params import RunParamsStore, UnloggedParams, get_own_fields, get_inherited_experiment_fields
 from src.select_task import SelectTaskStore
+from src.utils.utils import RESULTS_DIR, TEST_RESULTS_DIR
 from src.utils.launch_utils import (
     load_config,
     configure_logging,
     prepare_output_dir,
     transform_config,
     get_log_filepath,
+    get_next_folder_number,
 )
+from src.experiment_tracker import ExperimentTracker
 
 
 def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_tasks"] | None = None):
@@ -26,7 +30,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
     config = load_config(args.config)
     
     config = transform_config(config)
-
+    
     # Prepare the output directory
     output_dir = prepare_output_dir(config["log_dir"], args.name)
     logger = configure_logging(config["log_level"], output_dir)
@@ -78,8 +82,11 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             shutil.rmtree(output_dir)
             exit()
         
+
+    #Record parameters of different valid parameter configurations in a csv file
+    parameter_spec = []
+
     # Run the valid parameter configruations
-    
     for combo in valid_param_configurations:
         TaskFunc = SelectTaskStore[combo.task_name]
 
@@ -101,7 +108,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             eval_params['model'] = "openai/gpt-4o-mini"
 
 
-        eval(
+        evallog = eval(
             TaskFunc(
                 **generic_params,  # Unpack all inherited parameters as kwargs
                 task_specific_params=task_specific_params,  # Pass own fields as dictionary
@@ -110,7 +117,60 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             **eval_params,
         )
 
+        # Add non-None values from combo to parameter_spec
+        combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
+        logfile_name = evallog[0].location.split("/")[-1]; combo_dict["logfile_name"] = logfile_name
+        parameter_spec.append(combo_dict)
         logger.info("Completed evaluation for task: %s", combo.task_name)
+
+    
+    #Write parameter_specification_file to the output directory
+    csv_path = os.path.join(output_dir, "parameter_specs.csv")
+    all_keys = set()  # Get all unique keys from all dictionaries
+    for spec in parameter_spec:
+        all_keys.update(spec.keys())
+    
+    with open(csv_path, 'w', newline='') as csvfile:  # Write CSV with all keys as columns
+        fieldnames = sorted(all_keys)
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for spec in parameter_spec:
+            writer.writerow(spec)
+    
+    logger.info("Wrote parameter specifications to %s", csv_path)
+
+
+
+
+    #Set-up expeirment tracker
+    assert len(config["dataset_name"]) == 1 and len(config["task_name"]) == 1
+    dataset_name = config["dataset_name"][0]
+    task_name = config["task_name"][0]
+    
+    if args.name != "test":
+        if args.name == "test_tracker":
+            base_path = TEST_RESULTS_DIR
+        else:
+            base_path = RESULTS_DIR
+
+
+        #Now move the output directory to the desired results directory.
+        new_output_dir = os.path.join(base_path, f"log_files/{dataset_name}/{task_name}")
+        run_id = get_next_folder_number(new_output_dir)
+        new_output_dir = os.path.join(new_output_dir, f"{run_id}_{args.name}")
+        shutil.move(output_dir, new_output_dir)
+
+        #Add to tracker
+        tracker = ExperimentTracker(os.path.join(base_path, "experiment_tracker"))
+        tracker.add(
+            id=run_id,
+            dataset_name=dataset_name,
+            task_name=task_name,
+            run_name=args.name,
+            file_path=new_output_dir,
+            notes=""
+        )
+
 
 
 

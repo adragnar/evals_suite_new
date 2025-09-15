@@ -51,6 +51,7 @@ def prepare_output_dir(log_dir, name):
     output_dir = os.path.join(project_root, log_dir, f"{timestamp}_{name}")
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
+
 def find_project_root(start: Path, marker_names=("pyproject.toml", ".git")) -> Path:
     current = start.resolve()
     while current != current.root:
