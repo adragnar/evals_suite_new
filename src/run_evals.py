@@ -30,7 +30,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
     config = load_config(args.config)
     
     config = transform_config(config)
-    
+
     # Prepare the output directory
     output_dir = prepare_output_dir(config["log_dir"], args.name)
     logger = configure_logging(config["log_level"], output_dir)
@@ -79,7 +79,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
         )
         if proceed != "y":
             print("Aborting the execution.")
-            shutil.rmtree(output_dir)
+            # shutil.rmtree(output_dir)
             exit()
         
 

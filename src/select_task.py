@@ -16,14 +16,17 @@ def return_task(task_library, kwargs, task_specific_params):
     return task_func(**kwargs, **task_specific_params)
 
 @task
-def select_task_s1(
+def select_task_generate_exploits(
     task_specific_params,
+    eval_params,
     **kwargs,  # Accepts all inherited parameters
 ) -> Any:
     from src.tasks.task_datasets.inspect_evals.inference_server.generate_s1.src.s1 import inference_server_brainstorm_vulnerabilities
-    
+    from src.tasks.mbpp.experiments.generate_exploits.mbpp_generate_exploits import mbpp_generate_exploits
+
     task_library = {  # {dataset_name: task_func}
         "inference_server": inference_server_brainstorm_vulnerabilities,
+        "mbpp": mbpp_generate_exploits,
     }
 
     return return_task(task_library, kwargs, task_specific_params)
@@ -99,15 +102,15 @@ class Detection(BaseTask):
     def __call__(self, log_path: str, monitor_scale: str, visible_to_monitor: str, flag_error: bool, include_checks: bool, scorer_model: str, max_tokens: int, task_specific_params, eval_params):
         ...
 
-class S1(BaseTask):
-    def __call__(self, sandbag_type: str, num_strats: int, task_specific_params, eval_params):
+class GenerateExploits(BaseTask):
+    def __call__(self, sandbag_type: str, num_strats: int, num_cycles: int, fixed_length: bool, generate_model: str, max_tokens: int, output_dir: str, task_specific_params, eval_params):
         ...
         ...
 
 operations_ability_difference: list[AbilityDifference] = [select_task_ability_difference]
 operations_generate_execute: list[GenerateExecute] = [select_task_generate_execute]
 operations_detection: list[Detection] = [select_task_detection]
-operations_s1: list[S1] = [select_task_s1]
+operations_generate_exploits: list[GenerateExploits] = [select_task_generate_exploits]
 
 
 
@@ -115,5 +118,5 @@ SelectTaskStore = {
     "ability_difference": select_task_ability_difference,
     "generate_execute": select_task_generate_execute,
     "detection": select_task_detection,
-    "s1": select_task_s1
+    "generate_exploits": select_task_generate_exploits
 }

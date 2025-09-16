@@ -1,5 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 from typing import List
+import anthropic
+import os
 
 
 from inspect_ai.solver import system_message, generate, Solver
@@ -37,3 +39,19 @@ def dummy_solver() -> Solver | List[Solver]:
         system_message("hello there"),
         generate(),
     ]
+
+
+def call_anthropic_api(messages, model: str = "claude-3-5-sonnet-20240620", max_tokens: int = 4000) -> str:
+    """Call the Anthropic API to generate a response to a given prompt"""
+    client = anthropic.Anthropic(
+        api_key=os.getenv("ANTHROPIC_API_KEY")
+    )
+
+    message = client.messages.create(
+        model=model,
+        max_tokens=max_tokens,
+        messages=messages
+    )
+
+    # Parse the returned text and return structured data
+    return message.content[0].text

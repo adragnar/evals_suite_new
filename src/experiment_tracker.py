@@ -18,10 +18,10 @@ class ExperimentTracker:
 
     # Define task-specific dependency columns
     TASK_DEPENDENCIES = {
-        "generate_execute": ["generate_id"],
+        "generate_execute": [],
         "detection": ["generate_id", "execute_id"],
         "ability_difference": [],  # No dependencies for ability_difference
-        "s1": []  # No dependencies for s1
+        "generate_exploits": []  # No dependencies for generate_exploits
     }
 
     def __init__(self, base_dir):

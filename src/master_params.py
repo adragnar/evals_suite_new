@@ -107,7 +107,7 @@ class RunParams(BaseModel):
     # Universal task Parameters
 
     task_name: Literal[
-        "s1",
+        "generate_exploits",
         "ability_difference",
         "generate_execute",
         "detection",
@@ -141,6 +141,13 @@ class AbilityDifferenceParams(RunParams):
     sandbag_type: Literal["reward_hack", "subtle", "baseline"]
     ref_soln: bool
 
+class GenerateExploitsParams(RunParams):
+    sandbag_type: Literal["reward_hack", "subtle"]
+    num_strats: int
+    num_cycles: int
+    fixed_length: bool
+    generate_model: str
+    max_tokens: int
 
 class GenerateExecuteParams(RunParams):
     sandbag_type: Literal["reward_hack", "subtle"]
@@ -176,6 +183,10 @@ class InferenceServerAbilityDifferenceParams(AbilityDifferenceParams):
         
         return self
 
+class InferenceServerGenerateExploitsParams(GenerateExploitsParams):
+    difficulty: Literal["basic", "intermediate"]
+
+
 class InferenceServerGenerateExecuteParams(GenerateExecuteParams):
     difficulty: Literal["basic", "intermediate"]
     timeout: int
@@ -192,10 +203,11 @@ class MbppAbilityDifferenceParams(AbilityDifferenceParams):
     @model_validator(mode="after")
     def check_params(self) -> Self:
         # Add any validation logic here if needed
+        assert self.ref_soln is False, "ref_soln must be False for MBPP"
         return self
 
-
-
+class MbppGenerateExploitsParams(GenerateExploitsParams):
+    pass
 
 
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
@@ -208,11 +220,13 @@ UnloggedParams = {"log_dir", "log_level", "logdir_structure"}
 RunParamsStore = {
     "inference_server": {
         "ability_difference": InferenceServerAbilityDifferenceParams,
+        "generate_exploits": InferenceServerGenerateExploitsParams,
         "generate_execute": InferenceServerGenerateExecuteParams,
         "detection": InferenceServerDetectionParams
     },
     "mbpp": {
         "ability_difference": MbppAbilityDifferenceParams,
+        "generate_exploits": MbppGenerateExploitsParams,
     }
 }  #{dataset:{taskname: ModelClass}}
     
