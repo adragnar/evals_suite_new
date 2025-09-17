@@ -14,10 +14,16 @@ TEST_RESULTS_DIR = f"{REPO_ROOT}/tests/results"
 TRASH_LOGS_DIR = f"{REPO_ROOT}/tests/trash_logs"
 
 
+#EXPERIMENT UTILS DIRS
+GENERATE_EXPLOITS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_exploits"
+GENERATE_EXECUTE_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_execute"
+ALL_EXPS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/all_experiments"
+
 
 
 class PromptRenderer:
-    def __init__(self, dataset_prompt_dir = None, experiment_prompt_dir = None, task_prompt_dir = None):
+    def __init__(self, dataset_prompt_dir = None, experiment_prompt_dir = None, task_prompt_dir = None, all_exps_prompts_dir = None):
+        self.all_exps_prompts_dir = all_exps_prompts_dir
         self.dataset_prompt_dir = dataset_prompt_dir
         self.experiment_prompt_dir = experiment_prompt_dir
         self.task_prompt_dir = task_prompt_dir
@@ -25,12 +31,20 @@ class PromptRenderer:
     def render_jinja_template(self, template_name: str, root_paths: List[str] = [], **kwargs) -> str:
         """Render a Jinja template with the given context"""
 
-        env = Environment(loader=FileSystemLoader(root_paths + [pth for pth in [self.dataset_prompt_dir, self.experiment_prompt_dir, self.task_prompt_dir] if pth is not None]))
+        env = Environment(loader=FileSystemLoader(root_paths + [pth for pth in [self.all_exps_prompts_dir, self.dataset_prompt_dir, self.experiment_prompt_dir, self.task_prompt_dir] if pth is not None]))
 
         template = env.get_template(template_name)
         rendered_prompt = template.render(**kwargs)
 
         return rendered_prompt
+
+    def get_template_source(self, template_name: str, root_paths: List[str] = []) -> str:
+        """Get the raw template source without rendering"""
+        
+        env = Environment(loader=FileSystemLoader(root_paths + [pth for pth in [self.dataset_prompt_dir, self.experiment_prompt_dir, self.task_prompt_dir] if pth is not None]))
+        
+        source, _, _ = env.loader.get_source(env, template_name)
+        return source
 
 
 def dummy_solver() -> Solver | List[Solver]:
