@@ -61,6 +61,6 @@ if __name__ == "__main__":
     # Run evaluation with limit=1 for testing
     eval(
         task,
-        model="openai/gpt-4o-mini",
+        model="anthropic/claude-sonnet-4-20250514",
         limit=1
     )

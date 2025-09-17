@@ -40,7 +40,7 @@ from pydantic import BaseModel
 from src.utils.utils import call_anthropic_api
 from src.utils.utils import PromptRenderer, GENERATE_EXECUTE_UTILS_DIR, ALL_EXPS_UTILS_DIR
 
-from src.utils.shared_prompts.generate_exploits.generate_exploits import generate_vulnerabilities_solver
+from src.utils.shared_prompts.generate_exploits.generate_exploits import generate_vulnerabilities_solver, extract_vulnerability_from_text
 
 
 def generate_execute_solver(
@@ -72,7 +72,9 @@ def restart_to_execute(template: str):
         # Save the last assistant message text to sample metadata before clearing
         if state.messages and len(state.messages) > 0:
             # Save to sample metadata so it can be used in prompt_template
-            state.metadata["vulnerability_text"] = state.messages[-1].content
+
+            vulnerability = extract_vulnerability_from_text(state.messages[-1].text, 1, "VULNERABILITY", ["SUMMARY", "EXPLANATION"])
+            state.metadata["vulnerability_text"] = vulnerability["SUMMARY"] + "\n" + vulnerability["EXPLANATION"]
 
         # Clear all messages from the state
         state.messages = []
