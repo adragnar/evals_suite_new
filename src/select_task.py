@@ -57,8 +57,11 @@ def select_task_generate_execute(
     **kwargs,  # Accepts all inherited parameters
 ) -> Any:
     from src.tasks.task_datasets.inspect_evals.inference_server.generate_execute.src.generate_execute import inference_server_generate_execute
+    from src.tasks.mbpp.experiments.generate_execute.mbpp_generate_execute import mbpp_generate_execute
+
     task_library = {  # {dataset_name: task_func}
         "inference_server": inference_server_generate_execute,
+        "mbpp": mbpp_generate_execute,
     }
 
     return return_task(task_library, kwargs, task_specific_params)

@@ -144,20 +144,11 @@ class AbilityDifferenceParams(RunParams):
 class GenerateExploitsParams(RunParams):
     sandbag_type: Literal["reward_hack", "subtle"]
     num_strats: int
-    num_cycles: int
     fixed_length: bool
-    generate_model: str
-    max_tokens: int
 
 class GenerateExecuteParams(RunParams):
     sandbag_type: Literal["reward_hack", "subtle"]
-    num_strats: int
-    num_cycles: int
-    fixed_length: bool
-    is_hidden_scratchpad: bool
-    generate_model: str
-    scorer_model: str
-    max_tokens: int
+    hidden_scratchpad: bool
 
 class DetectionParams(RunParams):
     log_path: str
@@ -209,6 +200,9 @@ class MbppAbilityDifferenceParams(AbilityDifferenceParams):
 class MbppGenerateExploitsParams(GenerateExploitsParams):
     pass
 
+class MbppGenerateExecuteParams(GenerateExecuteParams):
+    pass
+
 
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
 
@@ -227,6 +221,7 @@ RunParamsStore = {
     "mbpp": {
         "ability_difference": MbppAbilityDifferenceParams,
         "generate_exploits": MbppGenerateExploitsParams,
+        "generate_execute": MbppGenerateExecuteParams,
     }
 }  #{dataset:{taskname: ModelClass}}
     
