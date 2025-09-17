@@ -3,7 +3,6 @@ from typing import List
 import anthropic
 import os
 
-
 from inspect_ai.solver import system_message, generate, Solver, TaskState
 from inspect_ai.scorer import CORRECT, scorer, accuracy, stderr, Target, Score, Scorer
 
@@ -21,6 +20,26 @@ GENERATE_EXECUTE_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_exe
 ALL_EXPS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/all_experiments"
 
 
+def pprint_inspect_messages(message_list, desired_roles: List[str]) -> str:
+    assert set(desired_roles) <= set(["assistant", "tool", "user", "system"])
+    output = []
+    for i, msg in enumerate(message_list):
+        if msg.role in desired_roles:
+            output.append(f"MESSAGE {i} - Role:{msg.role}")
+
+            if msg.role == "tool":
+                output.append(f"###BEGIN TOOL CALL OUTPUT###\n{msg.text}\n###END TOOL CALL OUTPUT###")
+            else:
+                output.append(f"##BEGIN MESSAGE CONTENT##\n{msg.text}\n##END MESSAGE CONTENT##")
+
+            if msg.role == "assistant" and hasattr(msg, 'tool_calls') and msg.tool_calls is not None:
+                for j, tool_call in enumerate(msg.tool_calls):
+                    toolcall_input = "" if tool_call.function == "submit" else tool_call.view.content
+                    output.append(f"\nTool Call {j+1} of Type {tool_call.function} Made: \n ###BEGIN TOOL CALL INPUT###\n{toolcall_input}\n###END TOOL CALL INPUT###")
+
+            output.append("\n")
+    return "\n".join(output)
+    
 
 class PromptRenderer:
     def __init__(self, dataset_prompt_dir = None, experiment_prompt_dir = None, task_prompt_dir = None, all_exps_prompts_dir = None):
@@ -85,3 +104,73 @@ def call_anthropic_api(messages, model: str = "claude-3-5-sonnet-20240620", max_
 
     # Parse the returned text and return structured data
     return message.content[0].text
+
+
+
+
+
+
+
+
+##UKAISI FORMAT TEMPLATE
+import pprint
+from string import Formatter
+from textwrap import indent
+from typing import Any
+
+
+def format_template(
+    template: str,
+    params: dict[str, Any],
+    skip_unknown: bool = True,
+) -> str:
+    """Format a template string, optionally preserving unknown placeholders.
+
+    Args:
+        template: A string containing {placeholders} to be formatted
+        params: Dictionary of parameters to substitute into the template
+        skip_unknown: If True, preserve unknown placeholders; if False, raise KeyError
+
+    Returns:
+        The formatted string with parameters substituted
+
+    Examples:
+        >>> format_template("Hello {name}!", {"name": "World"})
+        'Hello World!'
+        >>> format_template("Hello {name}!", {}, skip_unknown=True)
+        'Hello {name}!'
+    """
+
+    class SafeFormatter(Formatter):
+        def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
+            try:
+                # Handle array indexing and nested attributes
+                first, rest = (
+                    field_name.split(".", 1)
+                    if "." in field_name
+                    else (field_name, None)
+                )
+                first = first.split("[")[0]  # Remove any array indexing for the check
+
+                if first not in params and skip_unknown:
+                    return "{" + field_name + "}", field_name
+
+                obj = params.get(first)
+                if obj is None and skip_unknown:
+                    return "{" + field_name + "}", field_name
+
+                return super().get_field(field_name, args, kwargs)
+            except (AttributeError, KeyError, IndexError) as e:
+                if skip_unknown:
+                    return "{" + field_name + "}", field_name
+                raise KeyError(f"Failed to format field '{field_name}'") from e
+
+        def format_field(self, value: Any, format_spec: str) -> Any:
+            try:
+                return super().format_field(value, format_spec)
+            except (ValueError, TypeError):
+                if skip_unknown:
+                    return "{" + str(value) + ":" + format_spec + "}"
+                raise
+
+    return SafeFormatter().format(template, **params)

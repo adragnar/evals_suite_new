@@ -157,7 +157,7 @@ def verify() -> Scorer:
             value=CORRECT if result.success else INCORRECT,
             answer=raw_generated_code,
             explanation=explanation,
-            metadata={"raw_generated_code": state.output.completion},
+            metadata={"raw_generated_code": state.output.completion, "explanation": explanation},
         )
 
     return score
