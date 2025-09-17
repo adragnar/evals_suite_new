@@ -4,7 +4,8 @@ import anthropic
 import os
 
 
-from inspect_ai.solver import system_message, generate, Solver
+from inspect_ai.solver import system_message, generate, Solver, TaskState
+from inspect_ai.scorer import CORRECT, scorer, accuracy, stderr, Target, Score, Scorer
 
 REPO_ROOT = "/Users/RobertAdragna/Documents/MATS/evals_suite_new"
 RESULTS_DIR = f"{REPO_ROOT}/results"
@@ -53,6 +54,21 @@ def dummy_solver() -> Solver | List[Solver]:
         system_message("hello there"),
         generate(),
     ]
+
+
+@scorer(metrics=[accuracy()])
+def dummy_scorer() -> Scorer:
+    async def scorer(state: TaskState, target: Target) -> Score:
+
+
+        #Score the result
+        score = Score(
+            value=CORRECT,
+        )
+
+        return score
+
+    return scorer
 
 
 def call_anthropic_api(messages, model: str = "claude-3-5-sonnet-20240620", max_tokens: int = 4000) -> str:
