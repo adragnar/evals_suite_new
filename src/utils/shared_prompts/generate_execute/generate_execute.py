@@ -178,6 +178,9 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
             metadata=score.metadata,
         )
 
+        #Save for future scorers to use
+        state.store.set("score_with_correctness_metadata", score.metadata)
+
         return score
 
     return scorer

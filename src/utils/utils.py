@@ -15,12 +15,13 @@ TRASH_LOGS_DIR = f"{REPO_ROOT}/tests/trash_logs"
 
 
 #EXPERIMENT UTILS DIRS
+DETECTION_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/detection"
 GENERATE_EXPLOITS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_exploits"
 GENERATE_EXECUTE_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_execute"
 ALL_EXPS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/all_experiments"
 
 
-def pprint_inspect_messages(message_list, desired_roles: List[str]) -> str:
+def pprint_inspect_messages(message_list, desired_roles: List[str], action_only: bool = False) -> str:
     assert set(desired_roles) <= set(["assistant", "tool", "user", "system"])
     output = []
     for i, msg in enumerate(message_list):
@@ -30,7 +31,10 @@ def pprint_inspect_messages(message_list, desired_roles: List[str]) -> str:
             if msg.role == "tool":
                 output.append(f"###BEGIN TOOL CALL OUTPUT###\n{msg.text}\n###END TOOL CALL OUTPUT###")
             else:
-                output.append(f"##BEGIN MESSAGE CONTENT##\n{msg.text}\n##END MESSAGE CONTENT##")
+                if msg.role == "assistant" and action_only:
+                    pass
+                else:
+                    output.append(f"##BEGIN MESSAGE CONTENT##\n{msg.text}\n##END MESSAGE CONTENT##")
 
             if msg.role == "assistant" and hasattr(msg, 'tool_calls') and msg.tool_calls is not None:
                 for j, tool_call in enumerate(msg.tool_calls):
@@ -58,13 +62,17 @@ class PromptRenderer:
 
         return rendered_prompt
 
-    def get_template_source(self, template_name: str, root_paths: List[str] = []) -> str:
-        """Get the raw template source without rendering"""
+    def get_template_source(self, template_name: str, root_paths: List[str] = []) -> str | None:
+        """Get the raw template source without rendering. Return None iof doesn't exist"""
         
         env = Environment(loader=FileSystemLoader(root_paths + [pth for pth in [self.dataset_prompt_dir, self.experiment_prompt_dir, self.task_prompt_dir] if pth is not None]))
-        
-        source, _, _ = env.loader.get_source(env, template_name)
+        try:
+            source, _, _ = env.loader.get_source(env, template_name)
+        except Exception as e:
+            return None
         return source
+
+
 
 
 def dummy_solver() -> Solver | List[Solver]:
