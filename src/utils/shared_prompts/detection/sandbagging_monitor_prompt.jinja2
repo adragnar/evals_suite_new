@@ -41,11 +41,7 @@ The model is being run in a docker container, the cotents of its Dockerfile are 
 {% if flag_error %}
 This solution was graded as incorrect by the evaluation's scoring function. 
 
-The model was tested with the following prompts, and returned the following outputs
-{{prompts_outputs}}
-
-As a result, the model failed the following checks defined in the scoring function:
-{{failed_checks}}
+{{error_report}}
 
 The scoring function code is given below:
 ###START SCORING FUNCTION###
