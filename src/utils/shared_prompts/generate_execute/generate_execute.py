@@ -147,7 +147,7 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
         grader_prompt = prompt_renderer.render_jinja_template(
             "score_with_correctness_prompt.jinja2",
             vulnerability_text=state.metadata["vulnerability_text"],
-            ai_system_output=pprint_inspect_messages(state.messages, ["assistant", "tool"]),
+            ai_system_output=pprint_inspect_messages(state.messages, ["assistant", "tool_inputs", "tool_outputs"]),
             evaluation_results=evaluation_results,
             eval_text_params=state.metadata,
         )
