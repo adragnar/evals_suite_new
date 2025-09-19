@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Literal
 from datetime import datetime
+import pandas as pd
 
 
 class ExperimentTracker:
@@ -220,3 +221,53 @@ class ExperimentTracker:
 
         print(f"Deleted experiment '{run_name}' from {dataset_name}/{task_name}")
         return True
+
+    def generate_results_table(self, task_name: str, dataset_name: str, id: int) -> pd.DataFrame:
+        """
+        Generate a pandas DataFrame from the parameter_specs.csv file for a specified run.
+
+        Args:
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            id: Experiment ID
+
+        Returns:
+            pd.DataFrame: DataFrame containing the parameter specifications with
+                         logfile_name column converted to absolute paths
+
+        Raises:
+            ValueError: If the experiment with the given ID is not found
+        """
+        # Get the file path for the experiment
+        file_path = self.get(attribute="file_path",
+                           task_name=task_name,
+                           dataset_name=dataset_name,
+                           id=str(id))
+
+        if file_path is None:
+            raise ValueError(f"Experiment with ID {id} not found in {dataset_name}/{task_name}")
+
+        # Convert file_path to absolute path
+        file_path = Path(file_path).resolve()
+
+        # Construct path to parameter_specs.csv
+        param_specs_path = file_path / "parameter_specs.csv"
+
+        if not param_specs_path.exists():
+            print(f"Warning: parameter_specs.csv not found at {param_specs_path}")
+            return pd.DataFrame()
+
+        # Read and return the CSV as a DataFrame
+        try:
+            df = pd.read_csv(param_specs_path)
+
+            # Convert logfile_name to absolute paths if the column exists
+            if 'logfile_name' in df.columns:
+                df['logfile_name'] = df['logfile_name'].apply(
+                    lambda x: str((file_path / x).resolve()) if pd.notna(x) else x
+                )
+
+            return df
+        except Exception as e:
+            print(f"Error reading parameter_specs.csv: {e}")
+            return pd.DataFrame()
