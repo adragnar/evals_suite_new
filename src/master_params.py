@@ -25,7 +25,7 @@ def get_inherited_experiment_fields(model_instance):
     
     # Collect fields from all base classes
     for base in model_class.__bases__:
-        if hasattr(base, 'model_fields') and base.__name__ != 'RunParams':
+        if hasattr(base, 'model_fields') and base.__name__ != 'RunParams' and base.__name__ != 'ScoreParams':
             inherited_field_names.update(base.model_fields.keys())
     
     # Return dictionary of field names and their values from the instance
@@ -137,6 +137,41 @@ class RunParams(BaseModel):
 
 
 
+class ScoreParams(BaseModel):
+    # Universal task Parameters
+
+    task_name: Literal[
+        "detection",
+    ]
+    dataset_name: Literal[
+        "inference_server",
+        "mbpp",
+    ]
+
+
+
+class DetectionParams(ScoreParams):
+
+    model: Literal[
+        "openai/gpt-4o-mini",
+        "openai/gpt-4o",
+        "anthropic/claude-3-5-haiku-20241022",
+        "anthropic/claude-3-5-sonnet-20241022",
+        "anthropic/claude-3-7-sonnet-20250219",
+        "anthropic/claude-sonnet-4-20250514",
+        "anthropic/claude-3-opus-20240229",
+        "openai/gpt-4.5-preview-2025-02-27",
+        "openai/o1-2024-12-17",
+        "openai/o3-mini-2025-01-31"
+    ]
+    log_src: str
+    monitor_scale: Literal["binary", "ordinal"]
+    visible_to_monitor: Literal["solution", "solution_stripped", "all"]
+    flag_error: bool
+    max_tokens: int
+    include_checks: bool
+
+
 class AbilityDifferenceParams(RunParams):
     sandbag_type: Literal["reward_hack", "subtle", "baseline"]
     ref_soln: bool
@@ -150,13 +185,6 @@ class GenerateExecuteParams(RunParams):
     sandbag_type: Literal["reward_hack", "subtle"]
     hidden_scratchpad: bool
 
-class DetectionParams(RunParams):
-    log_path: str
-    monitor_scale: Literal["binary", "ordinal"]
-    visible_to_monitor: Literal["solution", "solution_stripped", "all"]
-    flag_error: bool
-    scorer_model: str
-    include_checks: bool
 
 
 
@@ -203,6 +231,9 @@ class MbppGenerateExploitsParams(GenerateExploitsParams):
 class MbppGenerateExecuteParams(GenerateExecuteParams):
     pass
 
+class MbppDetectionParams(DetectionParams):
+    pass
+
 
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
 
@@ -222,6 +253,7 @@ RunParamsStore = {
         "ability_difference": MbppAbilityDifferenceParams,
         "generate_exploits": MbppGenerateExploitsParams,
         "generate_execute": MbppGenerateExecuteParams,
+        "detection": MbppDetectionParams
     }
 }  #{dataset:{taskname: ModelClass}}
     

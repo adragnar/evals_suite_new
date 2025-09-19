@@ -151,6 +151,27 @@ class ExperimentTracker:
         print(f"Added experiment {experiment_id} to {dataset_name}/{task_name}")
         return experiment_id
 
+    def get(self, attribute: str, task_name: str, dataset_name: str, id: int):
+        """
+        Get a specific attribute value for an experiment with given ID.
+
+        Args:
+            attribute: Name of the attribute to retrieve
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            id: Experiment ID
+
+        Returns:
+            The attribute value if found, None otherwise
+        """
+        table = self._load_table(dataset_name, task_name)
+
+        for entry in table:
+            if int(entry['id']) == int(id):
+                return entry.get(attribute)
+
+        return None
+
     def delete(self, dataset_name: str, task_name: str, run_name: str) -> bool:
         """
         Delete an experiment run from the database and remove associated log files.

@@ -6,14 +6,14 @@ import subprocess
 from typing import Literal
 import csv
 
-from inspect_ai import eval
+from inspect_ai import eval, score
 from pydantic import ValidationError
 from dotenv import load_dotenv
 load_dotenv()
 
 from src.master_params import RunParamsStore, UnloggedParams, get_own_fields, get_inherited_experiment_fields
 from src.select_task import SelectTaskStore
-from src.utils.utils import RESULTS_DIR, TEST_RESULTS_DIR
+from src.utils.utils import RESULTS_DIR, TEST_RESULTS_DIR, dummy_scorer
 from src.utils.launch_utils import (
     load_config,
     configure_logging,
@@ -23,13 +23,22 @@ from src.utils.launch_utils import (
     get_next_folder_number,
 )
 from src.experiment_tracker import ExperimentTracker
+from src.utils.plotting_utils import get_eval_logs_list
 
+from inspect_ai.log import write_eval_log
 
 def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_tasks"] | None = None):
 
     config = load_config(args.config)
     
     config = transform_config(config)
+
+    #Set-up expeirment tracker
+    if args.name == "test_tracker":
+        base_tracker_path = TEST_RESULTS_DIR
+    else:
+        base_tracker_path = RESULTS_DIR
+    tracker = ExperimentTracker(os.path.join(base_tracker_path, "experiment_tracker"))
 
     # Prepare the output directory
     output_dir = prepare_output_dir(config["log_dir"], args.name)
@@ -93,37 +102,76 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
         # Get inherited fields as kwargs and own fields as task_specific_params
         generic_params = get_inherited_experiment_fields(combo)
         task_specific_params = get_own_fields(combo)
-        eval_params = {
-            "model": combo.model,
-            "temperature": combo.temperature,
-            "log_dir": os.path.join(output_dir, combo.model.split("/")[-1], get_log_filepath(config=combo, struct=config["logdir_structure"])),
-            "limit": combo.limit,
-            "epochs": combo.num_epochs,
-            "max_connections": 50,
-        }
-
-        if test == "run_tasks":
-            eval_params['limit'] = 1
-            eval_params['epochs'] = 1
-            eval_params['model'] = "openai/gpt-4o-mini"
 
 
-        evallog = eval(
-            TaskFunc(
-                **generic_params,  # Unpack all inherited parameters as kwargs
-                task_specific_params=task_specific_params,  # Pass own fields as dictionary
-                eval_params=eval_params,
-            ),
-            **eval_params,
-        )
+        if combo.task_name in ["ability_difference", "generate_eploits", "generate_execute"]:
+            eval_params = {
+                "model": combo.model,
+                "temperature": combo.temperature,
+                "log_dir": os.path.join(output_dir, combo.model.split("/")[-1], get_log_filepath(config=combo, struct=config["logdir_structure"])),
+                "limit": combo.limit,
+                "epochs": combo.num_epochs,
+                "max_connections": 50,
+            }
 
-        # Add non-None values from combo to parameter_spec
-        combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
-        logfile_name = evallog[0].location.split("/")[-1]; combo_dict["logfile_name"] = logfile_name
-        parameter_spec.append(combo_dict)
-        logger.info("Completed evaluation for task: %s", combo.task_name)
+            if test == "run_tasks":
+                eval_params['limit'] = 1
+                eval_params['epochs'] = 1
+                eval_params['model'] = "openai/gpt-4o-mini"
 
-    
+
+            evallog = eval(
+                TaskFunc(
+                    **generic_params,  # Unpack all inherited parameters as kwargs
+                    task_specific_params=task_specific_params,  # Pass own fields as dictionary
+                    eval_params=eval_params,
+                ),
+                **eval_params,
+            )
+            logfile_name = evallog[0].location.split("/")[-1]
+
+            combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
+            combo_dict["logfile_name"] = logfile_name
+            parameter_spec.append(combo_dict)
+            logger.info("Completed evaluation for task: %s", combo.task_name)
+
+        elif combo.task_name == "detection":
+
+            # Split log_src to get task_name and id (format: "task_name-id")
+            log_src_parts = combo.log_src.rsplit("-", 1)  # Split from the right, only once
+            task_name = log_src_parts[0]
+            experiment_id = log_src_parts[1]
+            log_dir = tracker.get("file_path", task_name=task_name, dataset_name=combo.dataset_name, id=experiment_id)
+            evallog_list = get_eval_logs_list(log_dir)
+            
+            # score_params = TaskFunc()
+            
+            for log in evallog_list:
+                scorer = dummy_scorer
+                score(log, scorers=scorer(), action="append")
+
+
+                new_log_path = os.path.join(output_dir, log.location.split("/")[-1])
+                # Handle file:// URL format
+                source_path = log.location.replace("file://", "") if log.location.startswith("file://") else log.location
+                shutil.copy(source_path, new_log_path)
+                write_eval_log(log, new_log_path)
+                logfile_name = new_log_path.split("/")[-1]
+
+                combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
+                combo_dict["logfile_name"] = logfile_name
+                parameter_spec.append(combo_dict)
+                logger.info("Completed evaluation for task: %s", combo.task_name)
+        
+        else:
+            raise ValueError(f"Task name {combo.task_name} not supported")
+        
+        # # Add non-None values from combo to parameter_spec
+        # combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
+        # combo_dict["logfile_name"] = logfile_name
+        # parameter_spec.append(combo_dict)
+        # logger.info("Completed evaluation for task: %s", combo.task_name)
+
     #Write parameter_specification_file to the output directory
     csv_path = os.path.join(output_dir, "parameter_specs.csv")
     all_keys = set()  # Get all unique keys from all dictionaries
@@ -148,20 +196,15 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
     task_name = config["task_name"][0]
     
     if args.name != "test":
-        if args.name == "test_tracker":
-            base_path = TEST_RESULTS_DIR
-        else:
-            base_path = RESULTS_DIR
-
 
         #Now move the output directory to the desired results directory.
-        new_output_dir = os.path.join(base_path, f"log_files/{dataset_name}/{task_name}")
+        new_output_dir = os.path.join(base_tracker_path, f"log_files/{dataset_name}/{task_name}")
         run_id = get_next_folder_number(new_output_dir)
         new_output_dir = os.path.join(new_output_dir, f"{run_id}_{args.name}")
         shutil.move(output_dir, new_output_dir)
 
         #Add to tracker
-        tracker = ExperimentTracker(os.path.join(base_path, "experiment_tracker"))
+        
         tracker.add(
             id=run_id,
             dataset_name=dataset_name,
