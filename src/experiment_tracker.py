@@ -5,7 +5,7 @@ Experiment Tracker for managing experiment runs across different datasets and ta
 import csv
 import shutil
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Literal
 from datetime import datetime
 
 
@@ -151,7 +151,7 @@ class ExperimentTracker:
         print(f"Added experiment {experiment_id} to {dataset_name}/{task_name}")
         return experiment_id
 
-    def get(self, attribute: str, task_name: str, dataset_name: str, id: int):
+    def get(self, attribute: str, task_name: str, dataset_name: str, id: str | Literal["last"]):
         """
         Get a specific attribute value for an experiment with given ID.
 
@@ -166,6 +166,9 @@ class ExperimentTracker:
         """
         table = self._load_table(dataset_name, task_name)
 
+        if id == "last":
+            return table[-1].get(attribute)
+        
         for entry in table:
             if int(entry['id']) == int(id):
                 return entry.get(attribute)

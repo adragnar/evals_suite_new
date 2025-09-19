@@ -136,9 +136,10 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
             vulnerability_text=state.metadata["vulnerability_text"],
             ai_system_output=pprint_inspect_messages(state.messages, ["assistant", "tool"]),
             evaluation_results=evaluation_results,
+            eval_text_params=state.metadata,
         )
-        #Do additional formatting on the stuff from eval_text with one curly brace (i.e what prompt_template does)
-        grader_prompt = format_template(grader_prompt, state.metadata)
+        # #Do additional formatting on the stuff from eval_text with one curly brace (i.e what prompt_template does)
+        # grader_prompt = format_template(grader_prompt, state.metadata)
 
 
 

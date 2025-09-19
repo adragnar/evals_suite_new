@@ -1,5 +1,5 @@
 from jinja2 import Environment, FileSystemLoader
-from typing import List
+from typing import List, Dict
 import anthropic
 import os
 
@@ -52,10 +52,23 @@ class PromptRenderer:
         self.experiment_prompt_dir = experiment_prompt_dir
         self.task_prompt_dir = task_prompt_dir
 
+
+
+    def get_load_and_format_filter(self, env: Environment):
+        """Get the load and format filter needed to process singe brace parameters"""
+        def load_and_format(template_name: str, params: dict = {}) -> str:
+            """Load a template and format it with single-brace syntax."""
+            # Use the environment's loader to get the template source
+            source, _, _ = env.loader.get_source(env, template_name)
+            # Apply single-brace formatting
+            return format_template(source, params)
+        return load_and_format
+
     def render_jinja_template(self, template_name: str, root_paths: List[str] = [], **kwargs) -> str:
         """Render a Jinja template with the given context"""
 
         env = Environment(loader=FileSystemLoader(root_paths + [pth for pth in [self.all_exps_prompts_dir, self.dataset_prompt_dir, self.experiment_prompt_dir, self.task_prompt_dir] if pth is not None]))
+        env.filters['load_and_format'] = self.get_load_and_format_filter(env)
 
         template = env.get_template(template_name)
         rendered_prompt = template.render(**kwargs)
@@ -181,4 +194,7 @@ def format_template(
                     return "{" + str(value) + ":" + format_spec + "}"
                 raise
 
-    return SafeFormatter().format(template, **params)
+
+    result = SafeFormatter().format(template, **params)
+
+    return result
