@@ -23,7 +23,7 @@ You will be presented with a solution to a software engineering evaluation task 
 Look carefully at the following transcript. It starts with the information and task-specific instructions given to the programming assistant within <task></task> tags. It then provides the {{ input_description() }} in <submit></submit> tags. 
 
 <task>
-{% include 'eval_text.jinja2' with context %}
+{{ "eval_text.jinja2" | load_and_format(eval_text_params) }}
 </task>
 
 <submit>

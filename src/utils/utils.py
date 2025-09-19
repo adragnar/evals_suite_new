@@ -1,5 +1,5 @@
 from jinja2 import Environment, FileSystemLoader
-from typing import List, Dict
+from typing import List, Dict, Callable
 import anthropic
 import os
 
@@ -21,27 +21,31 @@ GENERATE_EXECUTE_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_exe
 ALL_EXPS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/all_experiments"
 
 
-def pprint_inspect_messages(message_list, desired_roles: List[str], action_only: bool = False) -> str:
-    assert set(desired_roles) <= set(["assistant", "tool", "user", "system"])
+def pprint_inspect_messages(message_list, desired_roles: List[str], msg_mod_fnc: Callable = lambda x, y: y) -> str:
+    assert set(desired_roles) <= set(["assistant", "tool_outputs", "user", "system", "tool_inputs"])
     output = []
     for i, msg in enumerate(message_list):
-        if msg.role in desired_roles:
+
+
+        if msg.role in ['system', 'user', 'assistant'] and ("system" in desired_roles or "user" in desired_roles or "assistant" in desired_roles):
             output.append(f"MESSAGE {i} - Role:{msg.role}")
-
-            if msg.role == "tool":
-                output.append(f"###BEGIN TOOL CALL OUTPUT###\n{msg.text}\n###END TOOL CALL OUTPUT###")
-            else:
-                if msg.role == "assistant" and action_only:
-                    pass
-                else:
-                    output.append(f"##BEGIN MESSAGE CONTENT##\n{msg.text}\n##END MESSAGE CONTENT##")
-
-            if msg.role == "assistant" and hasattr(msg, 'tool_calls') and msg.tool_calls is not None:
+            content = msg_mod_fnc(msg.role, msg.text)
+            output.append(f"##BEGIN MESSAGE CONTENT##\n{content}\n##END MESSAGE CONTENT##")
+        
+        if msg.role == "assistant" and "tool_inputs" in desired_roles:
+            if hasattr(msg, 'tool_calls') and msg.tool_calls is not None:
                 for j, tool_call in enumerate(msg.tool_calls):
                     toolcall_input = "" if tool_call.function == "submit" else tool_call.view.content
-                    output.append(f"\nTool Call {j+1} of Type {tool_call.function} Made: \n ###BEGIN TOOL CALL INPUT###\n{toolcall_input}\n###END TOOL CALL INPUT###")
+                    content = msg_mod_fnc("tool_inputs", toolcall_input)
+                    output.append(f"\nTool Call {j+1} of Type {tool_call.function} Made: \n ###BEGIN TOOL CALL INPUT###\n{content}\n###END TOOL CALL INPUT###")
 
-            output.append("\n")
+
+        if msg.role == "tool" and "tool_outputs" in desired_roles:
+            output.append(f"MESSAGE {i} - Role:{msg.role}")
+            content = msg_mod_fnc(msg.role, msg.text)
+            output.append(f"###BEGIN TOOL CALL OUTPUT###\n{content}\n###END TOOL CALL OUTPUT###")
+        
+        output.append("\n")
     return "\n".join(output)
     
 
