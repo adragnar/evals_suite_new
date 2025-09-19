@@ -6,14 +6,24 @@ This module provides functionality to select and configure various evaluation ta
 from typing import Any, Protocol
 
 from inspect_ai import task
-from src.master_params import RunParams
+from src.master_params import RunParams, ScoreParams
 
 
 
-def return_task(task_library, kwargs, task_specific_params):
+def return_task(task_library, kwargs, task_specific_params, base_pydantic_class=RunParams):
     task_func = task_library.get(kwargs.get('dataset_name'))
-    kwargs = {k: v for k, v in kwargs.items() if k not in RunParams.model_fields}
+    kwargs = {k: v for k, v in kwargs.items() if k not in base_pydantic_class.model_fields}
     return task_func(**kwargs, **task_specific_params)
+
+def return_scorer(scorer_library, kwargs, task_specific_params):
+    """Return a scorer function for detection tasks.
+
+    Similar to return_task but handles scorer functions that return Scorer objects.
+    """
+    scorer_func = scorer_library.get(kwargs.get('dataset_name'))
+    # Don't filter kwargs for scorers - pass all inherited params
+    # Pass task_specific_params as individual keyword arguments
+    return scorer_func(**task_specific_params, **kwargs)
 
 @task
 def select_task_generate_exploits(
@@ -68,18 +78,19 @@ def select_task_generate_execute(
     
 
 
-@task
 def select_task_detection(
     task_specific_params,
-    eval_params,
     **kwargs,  # Accepts all inherited parameters
 ) -> Any:
-    from src.tasks.task_datasets.inspect_evals.inference_server.detection.src.detect_sandbagging import inference_server_detection
+    # from src.tasks.task_datasets.inspect_evals.inference_server.detection.src.detect_sandbagging import inference_server_detection
+    from src.tasks.mbpp.experiments.detection.mbpp_detection import mbpp_detection
+
     task_library = {  # {dataset_name: task_func}
-        "inference_server": inference_server_detection,
+        # "inference_server": inference_server_detection,
+        "mbpp": mbpp_detection,
     }
 
-    return return_task(task_library, kwargs, task_specific_params)
+    return return_task(task_library=task_library, kwargs=kwargs, task_specific_params=task_specific_params, base_pydantic_class=ScoreParams)
     
     
 
@@ -102,7 +113,7 @@ class GenerateExecute(BaseTask):
         ...
 
 class Detection(BaseTask):
-    def __call__(self, log_path: str, monitor_scale: str, visible_to_monitor: str, flag_error: bool, include_checks: bool, scorer_model: str, max_tokens: int, task_specific_params, eval_params):
+    def __call__(self, log_path: str, monitor_scale: str, visible_to_monitor: str, flag_error: bool, include_checks: bool, scorer_model: str, max_tokens: int, task_specific_params):
         ...
 
 class GenerateExploits(BaseTask):

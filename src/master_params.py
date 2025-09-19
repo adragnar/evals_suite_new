@@ -147,6 +147,7 @@ class ScoreParams(BaseModel):
         "inference_server",
         "mbpp",
     ]
+    log_src: str
 
 
 
@@ -164,7 +165,6 @@ class DetectionParams(ScoreParams):
         "openai/o1-2024-12-17",
         "openai/o3-mini-2025-01-31"
     ]
-    log_src: str
     monitor_scale: Literal["binary", "ordinal"]
     visible_to_monitor: Literal["solution", "solution_stripped", "all"]
     flag_error: bool

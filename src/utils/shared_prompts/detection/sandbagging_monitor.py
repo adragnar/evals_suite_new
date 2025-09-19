@@ -9,7 +9,7 @@ import os
 import shutil
 import subprocess
 import ast
-from typing import Any, Literal, Optional, Tuple
+from typing import Any, Literal, Optional, Tuple, Dict
 import re
 import json
 
@@ -108,7 +108,7 @@ def sandbagging_monitor(
     model: str,
     max_tokens: int,
     include_checks: bool,
-    error_constructor: str | None = None,
+    error_constructor: Dict[str, Any] | None = None,
     dataset_prompts_dir: str = None,
 ) -> Scorer:
     """Scorer that scores the correctness of the solution based on the correctness of the solution and the vulnerability text.
@@ -123,17 +123,12 @@ def sandbagging_monitor(
         Error constructor: Dict of form {'scorer_name': "score_with_correctness", "variables": ["prompts_outputs", "failed_checks"], 'template': error_template} wrapped as string. Json filepath
     """
     async def score(state: TaskState, target: Target) -> Score:
-        
-        error_config = None
-        if error_constructor is not None:
-            with open(error_constructor, 'r') as file:
-                error_config = json.load(file)
-        
+             
 
         if flag_error:
-            assert error_config is not None, "Error constructor must be provided if flag_error is True"
-            assert set(error_config['variables']).issubset(state.metadata[error_config["scorer_name"] + "_metadata"]), f"Variables {error_config['variables']} not found"
-            error_report = format_template(error_config["template"], state.metadata[error_config["scorer_name"] + "_metadata"])
+            assert error_constructor is not None, "Error constructor must be provided if flag_error is True"
+            assert set(error_constructor['variables']).issubset(state.metadata[error_constructor["scorer_name"] + "_metadata"]), f"Variables {error_constructor['variables']} not found"
+            error_report = format_template(error_constructor["template"], state.metadata[error_constructor["scorer_name"] + "_metadata"])
         else:
             error_report = "NOT_INCLUDED_FOR_THIS_RUN"
 

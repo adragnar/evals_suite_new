@@ -147,8 +147,8 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             # score_params = TaskFunc()
             
             for log in evallog_list:
-                scorer = dummy_scorer
-                score(log, scorers=scorer(), action="append")
+                scorer = TaskFunc(**generic_params, task_specific_params=task_specific_params)
+                score(log, scorers=scorer, action="append")
 
 
                 new_log_path = os.path.join(output_dir, log.location.split("/")[-1])
