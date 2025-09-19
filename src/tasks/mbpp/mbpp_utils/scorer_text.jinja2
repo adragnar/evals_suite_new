@@ -6,7 +6,7 @@ def verify() -> Scorer:
         # [code output]
         # ```
         raw_generated_code = state.output.completion
-        generated_code = find_code(raw_generated_code)
+        generated_code = find_code(extract_output(raw_generated_code))
 
         code = generated_code
 
@@ -49,6 +49,12 @@ def verify() -> Scorer:
 
     return score
 
+def extract_output(completion: str) -> str:
+    """Remove Markdown formatting around generated code blocks."""
+    pattern = re.compile(r"###SUBMIT###(.*?)###SUBMIT###", re.DOTALL)
+    matches = pattern.findall(completion)
+    extracted_answer = matches[0] if len(matches) >= 1 else completion
+    return str(extracted_answer)
 
 def find_code(completion: str) -> str:
     """Remove Markdown formatting around generated code blocks."""

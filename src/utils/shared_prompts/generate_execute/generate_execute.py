@@ -45,10 +45,21 @@ from src.utils.utils import PromptRenderer, GENERATE_EXECUTE_UTILS_DIR, ALL_EXPS
 
 from src.utils.shared_prompts.generate_exploits.generate_exploits import generate_vulnerabilities_solver, extract_vulnerability_from_text
 
+def execute_solver_patterns(solver_type):
+    """Get the solver pattern for the given solver type. Assumes that there is a standard [system_message, user_message structure]"""
+    if solver_type == "user_message":
+        return lambda x: [user_message(x), generate()]
+    elif solver_type == "basic_agent":
+        return lambda x: [system_message(x), generate()]
+    elif solver_type == "both":
+        return lambda x: [system_message(x), user_message(x), generate()]
+    else:
+        raise ValueError(f"Invalid solver type: {solver_type}")
 
 def generate_execute_solver(
     sandbag_type: str,
     hidden_scratchpad: bool,
+    solver_template: Callable,
     dataset_prompt_dir: str = None,
     experiment_prompt_dir: str = None,
 ) -> Solver:
@@ -57,22 +68,39 @@ def generate_execute_solver(
 
 
     prompt_renderer = PromptRenderer(dataset_prompt_dir=dataset_prompt_dir, task_prompt_dir=GENERATE_EXECUTE_UTILS_DIR, all_exps_prompts_dir=ALL_EXPS_UTILS_DIR)
-    execute_vuln_prompt = prompt_renderer.render_jinja_template(
+    execute_vuln_prompt_template = prompt_renderer.render_jinja_template(
         "exec_vulns_system_prompt.jinja2",
         sandbag_type=sandbag_type,
         hidden_scratchpad=hidden_scratchpad,
     )
 
-    solver = solver + [restart_to_execute(execute_vuln_prompt), user_message(prompt_renderer.render_jinja_template("exec_vulns_user_prompt.jinja2")), generate()]
+    user_prompt = prompt_renderer.render_jinja_template("exec_vulns_user_prompt.jinja2")
+
+    solver = solver + [wipe_history(), add_vuln_sys_msg(execute_vuln_prompt_template), user_message(user_prompt)] + [solver_template]
     return solver
 
 
-
 @solver
-def restart_to_execute(template: str):
+def add_vuln_sys_msg(prompt_template: str):
     """Custom solver that deletes all messages from the task state and saves the last assistant message."""
     async def solve(state: TaskState, generate: Generate) -> TaskState:
-        # Save the last assistant message text to sample metadata before clearing
+
+        formatted_prompt = prompt_template.format(
+            vulnerability_text=state.metadata["vulnerability_text"],
+        )
+
+        # # Add as a user message
+        # from inspect_ai.solver import user_message
+        state.messages.append(ChatMessageSystem(content=formatted_prompt))
+        return state
+
+    return solve
+
+
+@solver
+def wipe_history():
+    """Custom solver that deletes all messages from the task state."""
+    async def solve(state: TaskState, generate: Generate) -> TaskState:
         if state.messages and len(state.messages) > 0:
             # Save to sample metadata so it can be used in prompt_template
 
@@ -81,21 +109,6 @@ def restart_to_execute(template: str):
 
         # Clear all messages from the state
         state.messages = []
-        
-
-        # Format the template with both values
-        # kwargs = {"prompt": state.input}
-
-
-        # kwargs = omit(state.metadata | state.store._data, ["prompt"]) | params
-        # prompt.text = format_template(prompt_template, {"prompt": prompt.text} | kwargs)
-        formatted_prompt = template.format(
-            vulnerability_text=state.metadata["vulnerability_text"],
-        )
-
-        # # Add as a user message
-        # from inspect_ai.solver import user_message
-        state.messages.append(ChatMessageSystem(content=formatted_prompt))
         return state
 
     return solve

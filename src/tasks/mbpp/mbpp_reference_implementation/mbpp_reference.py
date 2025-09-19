@@ -166,7 +166,7 @@ def verify() -> Scorer:
 
 def extract_output(completion: str) -> str:
     """Remove Markdown formatting around generated code blocks."""
-    pattern = re.compile(r"(?:<OUTPUT>|<SOLUTION>)(.*?)(?:<OUTPUT>|</OUTPUT>|<SOLUTION>|</SOLUTION>)", re.DOTALL)
+    pattern = re.compile(r"###SUBMIT###(.*?)###SUBMIT###", re.DOTALL)
     matches = pattern.findall(completion)
     extracted_answer = matches[0] if len(matches) >= 1 else completion
     return str(extracted_answer)
