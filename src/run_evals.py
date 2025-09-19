@@ -148,13 +148,10 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             
             for log in evallog_list:
                 scorer = TaskFunc(**generic_params, task_specific_params=task_specific_params)
-                score(log, scorers=scorer, action="append")
+                log = score(log, scorers=scorer, action="append")
 
 
                 new_log_path = os.path.join(output_dir, log.location.split("/")[-1])
-                # Handle file:// URL format
-                source_path = log.location.replace("file://", "") if log.location.startswith("file://") else log.location
-                shutil.copy(source_path, new_log_path)
                 write_eval_log(log, new_log_path)
                 logfile_name = new_log_path.split("/")[-1]
 
