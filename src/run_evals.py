@@ -108,7 +108,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             eval_params = {
                 "model": combo.model,
                 "temperature": combo.temperature,
-                "log_dir": os.path.join(output_dir, combo.model.split("/")[-1], get_log_filepath(config=combo, struct=config["logdir_structure"])),
+                "log_dir": os.path.join(output_dir, get_log_filepath(config=combo, struct=config["logdir_structure"])),
                 "limit": combo.limit,
                 "epochs": combo.num_epochs,
                 "max_connections": 50,
