@@ -271,3 +271,93 @@ class ExperimentTracker:
         except Exception as e:
             print(f"Error reading parameter_specs.csv: {e}")
             return pd.DataFrame()
+
+    def write_analysis(self, task_name: str, dataset_name: str, run_id: int,
+                      id_file: str, analysis_name: str, analysis_filepath: str,
+                      analysis_notes: str = "") -> bool:
+        """
+        Write an analysis entry to the analysis_tracker.csv file in the experiment's log directory.
+
+        Args:
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            run_id: Experiment run ID
+            id_file: ID of the file being analyzed
+            analysis_name: Name/description of the analysis
+            analysis_filepath: Path to the analysis file
+            analysis_notes: Optional notes about the analysis
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # Get the file path for the experiment
+        file_path = self.get(attribute="file_path",
+                           task_name=task_name,
+                           dataset_name=dataset_name,
+                           id=str(run_id))
+
+        if file_path is None:
+            print(f"Experiment with ID {run_id} not found in {dataset_name}/{task_name}")
+            return False
+
+        # Convert file_path to Path object
+        file_path = Path(file_path)
+
+        # Create path to analysis_tracker.csv
+        analysis_tracker_path = file_path / "analysis_tracker.csv"
+
+        # Load existing analysis entries if file exists
+        analysis_entries = []
+        if analysis_tracker_path.exists():
+            try:
+                with open(analysis_tracker_path, 'r', newline='') as f:
+                    reader = csv.DictReader(f)
+                    analysis_entries = list(reader)
+            except Exception as e:
+                print(f"Error reading existing analysis_tracker.csv: {e}")
+
+        # Calculate analysis_name_id: count existing entries with same id_file and analysis_name
+        analysis_name_id = 0
+        for entry in analysis_entries:
+            if entry.get('id_file') == str(id_file) and entry.get('analysis_name') == analysis_name:
+                try:
+                    existing_id = int(entry['analysis_name_id'])
+                    if existing_id >= analysis_name_id:
+                        analysis_name_id = existing_id + 1
+                except (ValueError, TypeError, KeyError):
+                    raise ValueError(f"Column without analysis_name_id is present")
+
+        # Create new entry
+        new_entry = {
+            'id_file': id_file,
+            'analysis_name': analysis_name,
+            'analysis_name_id': str(analysis_name_id),
+            'analysis_filepath': analysis_filepath,
+            'analysis_notes': analysis_notes,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        # Add new entry to list
+        analysis_entries.append(new_entry)
+
+        # Sort entries by id_file, then analysis_name, then analysis_name_id (all ascending)
+        analysis_entries.sort(key=lambda x: (
+            int(x.get('id_file', 0)),
+            x.get('analysis_name', ''),
+            int(x.get('analysis_name_id', 0))
+        ))
+
+        # Write updated entries to CSV
+        try:
+            with open(analysis_tracker_path, 'w', newline='') as f:
+                fieldnames = ['id_file', 'analysis_name', 'analysis_name_id', 'analysis_filepath', 'analysis_notes', 'timestamp']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(analysis_entries)
+
+            print(f"Added analysis entry to {analysis_tracker_path}")
+            return True
+
+        except Exception as e:
+            print(f"Error writing analysis_tracker.csv: {e}")
+            return False
