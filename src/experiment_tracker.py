@@ -4,8 +4,11 @@ Experiment Tracker for managing experiment runs across different datasets and ta
 
 import csv
 import shutil
+import pickle
+import json
+import numpy as np
 from pathlib import Path
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Any
 from datetime import datetime
 import pandas as pd
 
@@ -273,10 +276,10 @@ class ExperimentTracker:
             return pd.DataFrame()
 
     def write_analysis(self, task_name: str, dataset_name: str, run_id: int,
-                      id_file: str, analysis_name: str, analysis_filepath: str,
-                      analysis_notes: str = "") -> bool:
+                      id_file: str, analysis_name: str, analysis: Any,
+                      analysis_filename: str, analysis_notes: str = "") -> bool:
         """
-        Write an analysis entry to the analysis_tracker.csv file in the experiment's log directory.
+        Write an analysis entry to the analysis_tracker.csv file and save the analysis data.
 
         Args:
             task_name: Name of the task
@@ -284,7 +287,8 @@ class ExperimentTracker:
             run_id: Experiment run ID
             id_file: ID of the file being analyzed
             analysis_name: Name/description of the analysis
-            analysis_filepath: Path to the analysis file
+            analysis: The analysis object to save (DataFrame, dict, array, etc.)
+            analysis_filename: Filename with extension (e.g., "detection_analysis.pkl")
             analysis_notes: Optional notes about the analysis
 
         Returns:
@@ -302,6 +306,10 @@ class ExperimentTracker:
 
         # Convert file_path to Path object
         file_path = Path(file_path)
+
+        # Create analysis_store directory if it doesn't exist
+        analysis_store_dir = file_path / "analysis_store"
+        analysis_store_dir.mkdir(exist_ok=True)
 
         # Create path to analysis_tracker.csv
         analysis_tracker_path = file_path / "analysis_tracker.csv"
@@ -327,12 +335,44 @@ class ExperimentTracker:
                 except (ValueError, TypeError, KeyError):
                     raise ValueError(f"Column without analysis_name_id is present")
 
+        # Construct unique filename with ID prefix
+        unique_filename = f"{analysis_name_id}_{analysis_filename}"
+        save_path = analysis_store_dir / unique_filename
+
+        # Save the analysis object based on file extension
+        extension = Path(analysis_filename).suffix.lower()
+        try:
+            if extension == '.pkl':
+                with open(save_path, 'wb') as f:
+                    pickle.dump(analysis, f)
+            elif extension == '.json':
+                with open(save_path, 'w') as f:
+                    json.dump(analysis, f, indent=2, default=str)
+            elif extension == '.csv':
+                if isinstance(analysis, pd.DataFrame):
+                    analysis.to_csv(save_path, index=False)
+                else:
+                    raise ValueError(f"Cannot save non-DataFrame object as CSV")
+            elif extension in ['.npy', '.npz']:
+                if extension == '.npy':
+                    np.save(save_path, analysis)
+                else:
+                    if isinstance(analysis, dict):
+                        np.savez(save_path, **analysis)
+                    else:
+                        np.savez(save_path, data=analysis)
+            else:
+                raise ValueError(f"Unsupported file format: {extension}")
+        except Exception as e:
+            print(f"Error saving analysis file: {e}")
+            return False
+
         # Create new entry
         new_entry = {
             'id_file': id_file,
             'analysis_name': analysis_name,
             'analysis_name_id': str(analysis_name_id),
-            'analysis_filepath': analysis_filepath,
+            'analysis_filename': unique_filename,
             'analysis_notes': analysis_notes,
             'timestamp': datetime.now().isoformat()
         }
@@ -350,12 +390,13 @@ class ExperimentTracker:
         # Write updated entries to CSV
         try:
             with open(analysis_tracker_path, 'w', newline='') as f:
-                fieldnames = ['id_file', 'analysis_name', 'analysis_name_id', 'analysis_filepath', 'analysis_notes', 'timestamp']
+                fieldnames = ['id_file', 'analysis_name', 'analysis_name_id', 'analysis_filename', 'analysis_notes', 'timestamp']
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(analysis_entries)
 
             print(f"Added analysis entry to {analysis_tracker_path}")
+            print(f"Saved analysis data to {save_path}")
             return True
 
         except Exception as e:
