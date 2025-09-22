@@ -276,7 +276,7 @@ class ExperimentTracker:
             return pd.DataFrame()
 
     def write_analysis(self, task_name: str, dataset_name: str, run_id: int,
-                      id_file: str, analysis_name: str, analysis: Any,
+                      analysis_name: str, analysis: Any,
                       analysis_filename: str, analysis_notes: str = "") -> bool:
         """
         Write an analysis entry to the analysis_tracker.csv file and save the analysis data.
@@ -285,7 +285,6 @@ class ExperimentTracker:
             task_name: Name of the task
             dataset_name: Name of the dataset
             run_id: Experiment run ID
-            id_file: ID of the file being analyzed
             analysis_name: Name/description of the analysis
             analysis: The analysis object to save (DataFrame, dict, array, etc.)
             analysis_filename: Filename with extension (e.g., "detection_analysis.pkl")
@@ -324,10 +323,10 @@ class ExperimentTracker:
             except Exception as e:
                 print(f"Error reading existing analysis_tracker.csv: {e}")
 
-        # Calculate analysis_name_id: count existing entries with same id_file and analysis_name
+        # Calculate analysis_name_id: count existing entries with same analysis_name
         analysis_name_id = 0
         for entry in analysis_entries:
-            if entry.get('id_file') == str(id_file) and entry.get('analysis_name') == analysis_name:
+            if entry.get('analysis_name') == analysis_name:
                 try:
                     existing_id = int(entry['analysis_name_id'])
                     if existing_id >= analysis_name_id:
@@ -369,7 +368,6 @@ class ExperimentTracker:
 
         # Create new entry
         new_entry = {
-            'id_file': id_file,
             'analysis_name': analysis_name,
             'analysis_name_id': str(analysis_name_id),
             'analysis_filename': unique_filename,
@@ -380,9 +378,8 @@ class ExperimentTracker:
         # Add new entry to list
         analysis_entries.append(new_entry)
 
-        # Sort entries by id_file, then analysis_name, then analysis_name_id (all ascending)
+        # Sort entries by analysis_name, then analysis_name_id (all ascending)
         analysis_entries.sort(key=lambda x: (
-            int(x.get('id_file', 0)),
             x.get('analysis_name', ''),
             int(x.get('analysis_name_id', 0))
         ))
@@ -390,7 +387,7 @@ class ExperimentTracker:
         # Write updated entries to CSV
         try:
             with open(analysis_tracker_path, 'w', newline='') as f:
-                fieldnames = ['id_file', 'analysis_name', 'analysis_name_id', 'analysis_filename', 'analysis_notes', 'timestamp']
+                fieldnames = ['analysis_name', 'analysis_name_id', 'analysis_filename', 'analysis_notes', 'timestamp']
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(analysis_entries)
