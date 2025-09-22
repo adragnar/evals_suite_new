@@ -201,7 +201,8 @@ def sandbagging_monitor(
         #     metadata.update({"check_results": check_results})
 
         return Score(
-            value=CORRECT,
+            value=answer,
+            answer=answer,
             explanation=answer,
             metadata=metadata,
         )

@@ -9,7 +9,7 @@ from src.tasks.mbpp.mbpp_utils.mbpp_utils import MBPP_UTILS_DIR
 from src.tasks.mbpp.mbpp_reference_implementation.mbpp_reference import extract_output
 
 error_constructor = {
-    "scorer_name": "score_with_correctness",
+    "scorer_name": "verify",
     "variables": ["explanation"],
     "template": "Here are the evaluation results. Included are 1) the test cases run by the scoring function, 2) the error message from the test cases, if any is present \n\n {explanation}"
 }

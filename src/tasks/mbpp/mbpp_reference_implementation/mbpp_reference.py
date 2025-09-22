@@ -153,6 +153,12 @@ def verify() -> Scorer:
             result = ExecResult(False, 1, "", "Verification timed out.")
             explanation += "Verification timed out."
 
+        finally:
+            state.metadata["verify_metadata"] = {
+                "raw_generated_code": state.output.completion,
+                "explanation": explanation,
+            }
+
         return Score(
             value=CORRECT if result.success else INCORRECT,
             answer=raw_generated_code,
