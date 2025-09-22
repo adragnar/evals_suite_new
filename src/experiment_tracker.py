@@ -399,3 +399,89 @@ class ExperimentTracker:
         except Exception as e:
             print(f"Error writing analysis_tracker.csv: {e}")
             return False
+
+    def load_analysis(self, task_name: str, dataset_name: str, run_id: int,
+                     analysis_name: str, analysis_name_id: int) -> Any:
+        """
+        Load an analysis object from the analysis_store directory.
+
+        Args:
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            run_id: Experiment run ID
+            analysis_name: Name of the analysis to load
+            analysis_name_id: ID of the specific analysis instance to load
+
+        Returns:
+            The loaded analysis object, or None if not found
+
+        Raises:
+            ValueError: If the analysis entry is not found
+            Exception: If there's an error loading the file
+        """
+        # Get the file path for the experiment
+        file_path = self.get(attribute="file_path",
+                           task_name=task_name,
+                           dataset_name=dataset_name,
+                           id=str(run_id))
+
+        if file_path is None:
+            raise ValueError(f"Experiment with ID {run_id} not found in {dataset_name}/{task_name}")
+
+        # Convert file_path to Path object
+        file_path = Path(file_path)
+
+        # Path to analysis_tracker.csv
+        analysis_tracker_path = file_path / "analysis_tracker.csv"
+
+        if not analysis_tracker_path.exists():
+            raise ValueError(f"No analysis_tracker.csv found at {analysis_tracker_path}")
+
+        # Load analysis entries
+        analysis_entries = []
+        try:
+            with open(analysis_tracker_path, 'r', newline='') as f:
+                reader = csv.DictReader(f)
+                analysis_entries = list(reader)
+        except Exception as e:
+            raise Exception(f"Error reading analysis_tracker.csv: {e}")
+
+        # Find the specific analysis entry
+        target_entry = None
+        for entry in analysis_entries:
+            if (entry.get('analysis_name') == analysis_name and
+                int(entry.get('analysis_name_id', -1)) == analysis_name_id):
+                target_entry = entry
+                break
+
+        if target_entry is None:
+            raise ValueError(f"Analysis not found: {analysis_name} with ID {analysis_name_id}")
+
+        # Get the filename and construct path
+        analysis_filename = target_entry['analysis_filename']
+        analysis_path = file_path / "analysis_store" / analysis_filename
+
+        if not analysis_path.exists():
+            raise ValueError(f"Analysis file not found at {analysis_path}")
+
+        # Load the analysis based on file extension
+        extension = analysis_path.suffix.lower()
+        try:
+            if extension == '.pkl':
+                with open(analysis_path, 'rb') as f:
+                    return pickle.load(f)
+            elif extension == '.json':
+                with open(analysis_path, 'r') as f:
+                    return json.load(f)
+            elif extension == '.csv':
+                return pd.read_csv(analysis_path)
+            elif extension == '.npy':
+                return np.load(analysis_path)
+            elif extension == '.npz':
+                data = np.load(analysis_path)
+                # Return as dict for npz files
+                return {key: data[key] for key in data.files}
+            else:
+                raise ValueError(f"Unsupported file format for loading: {extension}")
+        except Exception as e:
+            raise Exception(f"Error loading analysis file: {e}")
