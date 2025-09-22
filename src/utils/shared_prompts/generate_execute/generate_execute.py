@@ -116,7 +116,7 @@ def wipe_history():
 
 
 
-@scorer(metrics={"success": [accuracy(), stderr()], "pct_checks_passed": [accuracy()], "correctness_score": []})
+@scorer(metrics={"orig_score": [accuracy()], "correctness_score": [accuracy()]})
 def score_with_correctness(original_scorer: Callable, error_template: dict, model:str, max_tokens:int, dataset_prompt_dir: str) -> Scorer:
     """Scorer that scores the correctness of the solution based on the correctness of the solution and the vulnerability text.
     
