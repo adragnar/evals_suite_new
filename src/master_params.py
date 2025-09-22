@@ -110,7 +110,6 @@ class RunParams(BaseModel):
         "generate_exploits",
         "ability_difference",
         "generate_execute",
-        "detection",
     ]
     
     dataset_name: Literal[
@@ -142,6 +141,7 @@ class ScoreParams(BaseModel):
 
     task_name: Literal[
         "detection",
+        "baseline_thresholds",
     ]
     dataset_name: Literal[
         "inference_server",
@@ -253,7 +253,8 @@ RunParamsStore = {
         "ability_difference": MbppAbilityDifferenceParams,
         "generate_exploits": MbppGenerateExploitsParams,
         "generate_execute": MbppGenerateExecuteParams,
-        "detection": MbppDetectionParams
+        "detection": MbppDetectionParams,
+        "baseline_thresholds": MbppDetectionParams
     }
 }  #{dataset:{taskname: ModelClass}}
     

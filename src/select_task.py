@@ -91,10 +91,6 @@ def select_task_detection(
     }
 
     return return_task(task_library=task_library, kwargs=kwargs, task_specific_params=task_specific_params, base_pydantic_class=ScoreParams)
-    
-    
-
-
 
 
 ## Define a base protocol for all tasks
@@ -132,5 +128,6 @@ SelectTaskStore = {
     "ability_difference": select_task_ability_difference,
     "generate_execute": select_task_generate_execute,
     "detection": select_task_detection,
+    "baseline_thresholds": select_task_detection,
     "generate_exploits": select_task_generate_exploits
 }

@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from dotenv import load_dotenv
 load_dotenv()
 
-from src.master_params import RunParamsStore, UnloggedParams, get_own_fields, get_inherited_experiment_fields
+from src.master_params import RunParamsStore, UnloggedParams, get_own_fields, get_inherited_experiment_fields, ScoreParams, RunParams
 from src.select_task import SelectTaskStore
 from src.utils.utils import RESULTS_DIR, TEST_RESULTS_DIR, dummy_scorer
 from src.utils.launch_utils import (
@@ -104,7 +104,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
         task_specific_params = get_own_fields(combo)
 
 
-        if combo.task_name in ["ability_difference", "generate_eploits", "generate_execute"]:
+        if combo.task_name in RunParams.__annotations__['task_name'].__args__:
             eval_params = {
                 "model": combo.model,
                 "temperature": combo.temperature,
@@ -135,7 +135,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             parameter_spec.append(combo_dict)
             logger.info("Completed evaluation for task: %s", combo.task_name)
 
-        elif combo.task_name == "detection":
+        elif combo.task_name in ScoreParams.__annotations__['task_name'].__args__:
 
             # Split log_src to get task_name and id (format: "task_name-id")
             log_src_parts = combo.log_src.rsplit("-", 1)  # Split from the right, only once
@@ -143,6 +143,11 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             experiment_id = log_src_parts[1]
             log_dir = tracker.get("file_path", task_name=task_name, dataset_name=combo.dataset_name, id=experiment_id)
             evallog_list = get_eval_logs_list(log_dir)
+
+            if combo.task_name == "baseline_thresholds":
+                find_baseline = lambda log: log.eval.task_args['kwargs']['sandbag_type'] == "baseline"
+                eval_log_list = [log for log in evallog_list if find_baseline(log)]; assert len(eval_log_list) == 1
+
             
             # score_params = TaskFunc()
             
