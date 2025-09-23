@@ -96,7 +96,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
     parameter_spec = []
 
     # Run the valid parameter configruations
-    for combo in valid_param_configurations:
+    for ind, combo in enumerate(valid_param_configurations):
         TaskFunc = SelectTaskStore[combo.task_name]
 
         # Get inherited fields as kwargs and own fields as task_specific_params
@@ -132,6 +132,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
 
             combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
             combo_dict["logfile_name"] = logfile_name
+            combo_dict["id_file"] = ind
             parameter_spec.append(combo_dict)
             logger.info("Completed evaluation for task: %s", combo.task_name)
 
@@ -151,7 +152,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             
             # score_params = TaskFunc()
             
-            for log in evallog_list:
+            for j,log in enumerate(evallog_list):
                 scorer = TaskFunc(**generic_params, task_specific_params=task_specific_params)
                 log = score(log, scorers=scorer, action="append")
 
@@ -162,6 +163,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
 
                 combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
                 combo_dict["logfile_name"] = logfile_name
+                combo_dict["id_file"] = ind * len(evallog_list) + j
                 parameter_spec.append(combo_dict)
                 logger.info("Completed evaluation for task: %s", combo.task_name)
         
@@ -181,7 +183,9 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
         all_keys.update(spec.keys())
     
     with open(csv_path, 'w', newline='') as csvfile:  # Write CSV with all keys as columns
-        fieldnames = sorted(all_keys)
+        # Ensure id_file is present and comes first
+        assert 'id_file' in all_keys, "id_file must be present in all parameter specs"
+        fieldnames = ['id_file'] + sorted([k for k in all_keys if k != 'id_file'])
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for spec in parameter_spec:
