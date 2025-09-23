@@ -103,7 +103,7 @@ class ExperimentTracker:
             task_name: str,
             run_name: str,
             file_path: str,
-            id: int,
+            id: int | str,
             notes: str = "",
             **kwargs) -> int:
         """
@@ -123,8 +123,8 @@ class ExperimentTracker:
         """
         table = self._load_table(dataset_name, task_name)
 
-        # Use the provided ID (duplicates are allowed)
-        experiment_id = id
+        # Use the provided ID (duplicates are allowed) - ensure it's an integer
+        experiment_id = int(id)
 
         # Create the experiment entry
         entry = {
@@ -155,7 +155,7 @@ class ExperimentTracker:
         print(f"Added experiment {experiment_id} to {dataset_name}/{task_name}")
         return experiment_id
 
-    def get(self, attribute: str, task_name: str, dataset_name: str, id: str | Literal["last"]):
+    def get(self, attribute: str, task_name: str, dataset_name: str, id: int | str | Literal["last"]):
         """
         Get a specific attribute value for an experiment with given ID.
 
@@ -172,9 +172,11 @@ class ExperimentTracker:
 
         if id == "last":
             return table[-1].get(attribute)
-        
+
+        # Convert id to int for comparison
+        id_int = int(id)
         for entry in table:
-            if int(entry['id']) == int(id):
+            if int(entry['id']) == id_int:
                 return entry.get(attribute)
 
         return None
@@ -225,7 +227,7 @@ class ExperimentTracker:
         print(f"Deleted experiment '{run_name}' from {dataset_name}/{task_name}")
         return True
 
-    def generate_results_table(self, task_name: str, dataset_name: str, id: int) -> pd.DataFrame:
+    def generate_results_table(self, task_name: str, dataset_name: str, id: int | str) -> pd.DataFrame:
         """
         Generate a pandas DataFrame from the parameter_specs.csv file for a specified run.
 
@@ -245,10 +247,10 @@ class ExperimentTracker:
         file_path = self.get(attribute="file_path",
                            task_name=task_name,
                            dataset_name=dataset_name,
-                           id=str(id))
+                           id=id)
 
         if file_path is None:
-            raise ValueError(f"Experiment with ID {id} not found in {dataset_name}/{task_name}")
+            raise ValueError(f"Experiment with ID {int(id)} not found in {dataset_name}/{task_name}")
 
         # Convert file_path to absolute path
         file_path = Path(file_path).resolve()
@@ -275,7 +277,7 @@ class ExperimentTracker:
             print(f"Error reading parameter_specs.csv: {e}")
             return pd.DataFrame()
 
-    def write_analysis(self, task_name: str, dataset_name: str, run_id: int,
+    def write_analysis(self, task_name: str, dataset_name: str, run_id: int | str,
                       analysis_name: str, analysis: Any,
                       analysis_filename: str, analysis_notes: str = "") -> bool:
         """
@@ -297,10 +299,10 @@ class ExperimentTracker:
         file_path = self.get(attribute="file_path",
                            task_name=task_name,
                            dataset_name=dataset_name,
-                           id=str(run_id))
+                           id=run_id)
 
         if file_path is None:
-            print(f"Experiment with ID {run_id} not found in {dataset_name}/{task_name}")
+            print(f"Experiment with ID {int(run_id)} not found in {dataset_name}/{task_name}")
             return False
 
         # Convert file_path to Path object
@@ -400,7 +402,7 @@ class ExperimentTracker:
             print(f"Error writing analysis_tracker.csv: {e}")
             return False
 
-    def load_analysis(self, task_name: str, dataset_name: str, run_id: int,
+    def load_analysis(self, task_name: str, dataset_name: str, run_id: int | str,
                      analysis_name: str, analysis_name_id: int) -> Any:
         """
         Load an analysis object from the analysis_store directory.
@@ -423,10 +425,10 @@ class ExperimentTracker:
         file_path = self.get(attribute="file_path",
                            task_name=task_name,
                            dataset_name=dataset_name,
-                           id=str(run_id))
+                           id=run_id)
 
         if file_path is None:
-            raise ValueError(f"Experiment with ID {run_id} not found in {dataset_name}/{task_name}")
+            raise ValueError(f"Experiment with ID {int(run_id)} not found in {dataset_name}/{task_name}")
 
         # Convert file_path to Path object
         file_path = Path(file_path)

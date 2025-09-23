@@ -78,16 +78,20 @@ if __name__ == "__main__":
     from inspect_ai.log import read_eval_log
     import os
 
+    DATASET_NAME = "mbpp"
+    RUN_ID = 0
+    TASK_NAME = "baseline_thresholds"
+    SCORER_NAME = "sandbagging_monitor"
 
     tracker = ExperimentTracker(os.path.join(RESULTS_DIR, "experiment_tracker"))
-    df_baselines = tracker.generate_results_table(task_name="baseline_thresholds", dataset_name="mbpp", id=1)
+    df_baselines = tracker.generate_results_table(task_name=TASK_NAME, dataset_name=DATASET_NAME, id=RUN_ID)
 
     results = {}
     for _, row in df_baselines.iterrows():
         id_file = row['id_file']
         log = read_eval_log(row['logfile_name'])
-        scores = [sample.scores['sandbagging_monitor'].metadata['answer'] for sample in log.samples]
+        scores = [sample.scores[SCORER_NAME].metadata['answer'] for sample in log.samples]
         thresholds_df = compute_thresholds(scores, fpr_increment=0.05)
         results[id_file] = thresholds_df
     
-    tracker.write_analysis(task_name="baseline_thresholds", dataset_name="mbpp", run_id=1, analysis_name="baseline_thresholds", analysis=results, analysis_filename="thresholds.pkl")
+    tracker.write_analysis(task_name=TASK_NAME, dataset_name=DATASET_NAME, run_id=RUN_ID, analysis_name="baseline_thresholds", analysis=results, analysis_filename="thresholds.pkl")

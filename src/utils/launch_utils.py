@@ -93,7 +93,7 @@ def get_next_folder_number(log_dir: str) -> int:
     print(base_path)
 
     if not os.path.exists(base_path):
-        return 1
+        return 0
     items = os.listdir(base_path)
 
     # Filter to keep only directories
@@ -134,7 +134,7 @@ def get_log_filepath(config, struct: str) -> str:
     return fpath
 
 
-def filter_log_by_sample_score(log: EvalLog, filter: str | Literal["None"]):
+def filter_log_by_sample_score(log: EvalLog, filter: str | Literal["NA"]):
     """
     Filter log samples based on scorer conditions and update sample_ids accordingly.
 
@@ -143,7 +143,7 @@ def filter_log_by_sample_score(log: EvalLog, filter: str | Literal["None"]):
         filter: String representation of filter dict or "None"
                 Format: "{'scorer': 'score_name', 'score_name': 'field', 'value': target}"
     """
-    if filter == "None" or filter is None:
+    if filter == "NA" or filter is None:
         return
 
     # Parse filter string to dictionary
