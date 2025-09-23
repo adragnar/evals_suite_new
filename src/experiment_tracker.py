@@ -23,7 +23,7 @@ class ExperimentTracker:
     # Define task-specific dependency columns
     TASK_DEPENDENCIES = {
         "generate_execute": [],
-        "detection": ["generate_id", "execute_id"],
+        "detection": [],
         "ability_difference": [],  # No dependencies for ability_difference
         "generate_exploits": []  # No dependencies for generate_exploits
     }

@@ -132,6 +132,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             logfile_name = evallog[0].location.split("/")[-1]
 
             combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
+            combo_dict["previous_run"] = "NA"
             combo_dict["logfile_name"] = logfile_name
             combo_dict["id_file"] = ind
             parameter_spec.append(combo_dict)
@@ -165,6 +166,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
                 logfile_name = new_log_path.split("/")[-1]
 
                 combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
+                combo_dict["previous_run"] = task_name + "-" + experiment_id
                 combo_dict["logfile_name"] = logfile_name
                 combo_dict["id_file"] = ind * len(evallog_list) + j
                 parameter_spec.append(combo_dict)
