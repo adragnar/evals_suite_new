@@ -21,6 +21,7 @@ from src.utils.launch_utils import (
     transform_config,
     get_log_filepath,
     get_next_folder_number,
+    filter_log_by_sample_score,
 )
 from src.experiment_tracker import ExperimentTracker
 from src.utils.plotting_utils import get_eval_logs_list
@@ -154,6 +155,8 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
             
             for j,log in enumerate(evallog_list):
                 scorer = TaskFunc(**generic_params, task_specific_params=task_specific_params)
+                filter_log_by_sample_score(log, filter=combo.sample_filter)
+
                 log = score(log, scorers=scorer, action="append")
 
 

@@ -148,6 +148,7 @@ class ScoreParams(BaseModel):
         "mbpp",
     ]
     log_src: str
+    sample_filter: str | Literal["None"]
 
 
 

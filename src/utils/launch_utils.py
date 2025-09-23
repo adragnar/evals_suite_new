@@ -2,12 +2,15 @@ import os
 import re
 from pathlib import Path
 import argparse
+import ast
+from typing import Literal
 
 import logging
 from datetime import datetime
 from pathlib import Path
 import yaml
 
+from inspect_ai.log import EvalLog
 from inspect_ai.scorer import scorer, Score, Target, CORRECT
 from inspect_ai.solver import TaskState
 
@@ -129,6 +132,49 @@ def get_log_filepath(config, struct: str) -> str:
             fpath = os.path.join(fpath, f"{param}={getattr(config, param)}")
 
     return fpath
+
+
+def filter_log_by_sample_score(log: EvalLog, filter: str | Literal["None"]):
+    """
+    Filter log samples based on scorer conditions and update sample_ids accordingly.
+
+    Args:
+        log: EvalLog object to modify in-place
+        filter: String representation of filter dict or "None"
+                Format: "{'scorer': 'score_name', 'score_name': 'field', 'value': target}"
+    """
+    if filter == "None" or filter is None:
+        return
+
+    # Parse filter string to dictionary
+    try:
+        filter_dict = ast.literal_eval(filter)
+    except (ValueError, SyntaxError) as e:
+        raise ValueError(f"Invalid filter format: {filter}. Error: {e}")
+
+    # Extract filter parameters
+    if set(filter_dict.keys()) == set(['scorer', 'value']):
+        sample_matches = lambda sample: sample.scores[filter_dict.get('scorer')].value == filter_dict.get('value')
+    elif set(filter_dict.keys()) == set(['scorer', 'score_name', 'value']):
+        sample_matches = lambda sample: sample.scores[filter_dict.get('scorer')].value[filter_dict.get('score_name')] == filter_dict.get('value')
+    else:
+        raise ValueError(f"Filter must contain 'scorer', 'score_name', and 'value'. Got: {filter_dict}")
+    
+
+    # Track indices of samples to keep
+    indices_to_keep = []
+    for i, sample in enumerate(log.samples):
+        if sample_matches(sample):
+            indices_to_keep.append(i)
+
+    # Filter samples
+    filtered_samples = [log.samples[i] for i in indices_to_keep]
+    log.samples = filtered_samples
+
+    # Filter sample_ids if they exist
+    if hasattr(log.eval.dataset, 'sample_ids') and log.eval.dataset.sample_ids is not None:
+        filtered_sample_ids = [log.eval.dataset.sample_ids[i] for i in indices_to_keep]
+        log.eval.dataset.sample_ids = filtered_sample_ids
 
 
 
