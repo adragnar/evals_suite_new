@@ -1,0 +1,27 @@
+# Valid configuration with single values for all parameters
+# Expected: 1 valid parameter configuration
+
+dataset_name: [inference_server]
+task_name: [generate_execute]
+model: [anthropic/claude-3-5-sonnet-20241022]
+limit: [1]
+temperature: [0.0]
+num_epochs: [1]
+seed: [42]
+
+# Task-specific parameters
+sandbag_type: [subtle]
+num_cycles: [1]
+num_strats: [2]
+difficulty: [basic]
+fixed_length: [true]
+is_hidden_scratchpad: [false]
+timeout: [60]
+generate_model: [claude-sonnet-4-20250514]
+scorer_model: [anthropic/claude-3-5-sonnet-20241022]
+max_tokens: [4000]
+
+# Logging configuration
+log_dir: tests/logs/generate_execute
+log_level: INFO
+logdir_structure: ""

@@ -1,0 +1,20 @@
+# MBPP Generate Execute Task Configuration
+
+# Required dataset and task identifiers
+dataset_name: [mbpp]
+task_name: [generate_execute]
+
+# Universal parameters (from RunParams)
+model: [openai/gpt-4o-mini]
+limit: [15]
+temperature: [0.5]
+num_epochs: [1]
+
+# Task-specific parameters (from GenerateExecuteParams)
+sandbag_type: [reward_hack, subtle]
+hidden_scratchpad: [False]
+
+# Logging configuration (unlogged params)
+log_dir: logs/
+log_level: INFO
+logdir_structure: ""
