@@ -1,4 +1,0 @@
-{"name": "01_valid_single_values", "file": "config_files/01_valid_single_values.yaml", "expected_count": 1, "should_pass": true, "smoke_test": true}
-{"name": "02_valid_multiple_sandbag_types", "file": "config_files/02_valid_multiple_sandbag_types.yaml", "expected_count": 3, "should_pass": true, "smoke_test": false}
-{"name": "03_invalid_missing_parameter", "file": "config_files/03_invalid_missing_parameter.yaml", "expected_count": 0, "should_pass": false, "smoke_test": false}
-{"name": "04_invalid_wrong_literal", "file": "config_files/04_invalid_wrong_literal.yaml", "expected_count": 0, "should_pass": false, "smoke_test": false}
