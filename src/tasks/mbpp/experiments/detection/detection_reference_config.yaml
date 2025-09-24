@@ -1,0 +1,18 @@
+dataset_name: [mbpp]
+task_name: [detection]
+sample_filter: ["{'scorer':'score_with_correctness', 'score_name': 'correctness_score', 'value': 'C'}"]
+
+log_src: [generate_execute-last]
+# model: [anthropic/claude-sonnet-4-20250514]
+model: [openai/gpt-4o-mini]
+monitor_scale: [ordinal]
+visible_to_monitor: [solution]
+# flag_error: [True, False]
+flag_error: [True]
+max_tokens: [4000]
+include_checks: [False]
+
+
+log_dir: logs/com
+log_level: INFO
+logdir_structure: ""

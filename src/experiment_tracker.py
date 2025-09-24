@@ -1,0 +1,489 @@
+"""
+Experiment Tracker for managing experiment runs across different datasets and tasks.
+"""
+
+import csv
+import shutil
+import pickle
+import json
+import numpy as np
+from pathlib import Path
+from typing import Dict, List, Literal, Any
+from datetime import datetime
+import pandas as pd
+
+
+class ExperimentTracker:
+    """
+    Manages experiment tracking across different datasets and tasks.
+
+    Each dataset/task combination has its own table stored as a CSV file.
+    """
+
+    # Define task-specific dependency columns
+    TASK_DEPENDENCIES = {
+        "generate_execute": [],
+        "detection": [],
+        "ability_difference": [],  # No dependencies for ability_difference
+        "generate_exploits": []  # No dependencies for generate_exploits
+    }
+
+    def __init__(self, base_dir):
+        """
+        Initialize the ExperimentTracker.
+
+        Args:
+            base_dir: Base directory for storing experiment data. Has form <dataset_name>/<task_name>
+        """
+
+        self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    def _get_table_path(self, dataset_name: str, task_name: str) -> Path:
+        """Get the path to the table file for a dataset/task combination."""
+        dataset_dir = self.base_dir / dataset_name
+        dataset_dir.mkdir(parents=True, exist_ok=True)
+        # Use double underscore format for filename
+        return dataset_dir / f"{dataset_name}__{task_name}.csv"
+
+    def _get_columns(self, task_name: str) -> List[str]:
+        """Get the column names for a specific task."""
+        base_columns = ['id', 'run_name', 'notes', 'file_path', 'timestamp']
+        if task_name in self.TASK_DEPENDENCIES:
+            base_columns.extend(self.TASK_DEPENDENCIES[task_name])
+        return base_columns
+
+    def _load_table(self, dataset_name: str, task_name: str) -> List[Dict]:
+        """Load the experiment table for a dataset/task combination."""
+        table_path = self._get_table_path(dataset_name, task_name)
+
+        if table_path.exists():
+            with open(table_path, 'r', newline='') as f:
+                reader = csv.DictReader(f)
+                return list(reader)
+        return []
+
+    def _save_table(self, dataset_name: str, task_name: str, table: List[Dict]):
+        """Save the experiment table for a dataset/task combination."""
+        table_path = self._get_table_path(dataset_name, task_name)
+
+        if not table:
+            # If table is empty, still create the file with headers
+            columns = self._get_columns(task_name)
+            with open(table_path, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=columns)
+                writer.writeheader()
+        else:
+            # Get all possible columns from the data
+            all_columns = set()
+            for entry in table:
+                all_columns.update(entry.keys())
+
+            # Ensure base columns are first
+            base_columns = self._get_columns(task_name)
+            ordered_columns = base_columns + [col for col in all_columns if col not in base_columns]
+
+            with open(table_path, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=ordered_columns)
+                writer.writeheader()
+                writer.writerows(table)
+
+    def _get_next_id(self, dataset_name: str, task_name: str) -> int:
+        """Get the next available ID for a dataset/task combination."""
+        table = self._load_table(dataset_name, task_name)
+
+        if not table:
+            return 0
+
+        # Convert id strings to integers before finding max
+        return max(int(entry['id']) for entry in table) + 1
+
+    def add(self,
+            dataset_name: str,
+            task_name: str,
+            run_name: str,
+            file_path: str,
+            id: int | str,
+            notes: str = "",
+            **kwargs) -> int:
+        """
+        Add a new experiment run to the database.
+
+        Args:
+            dataset_name: Name of the dataset
+            task_name: Name of the task
+            run_name: Name given to the experiment run
+            file_path: Path to the log files for this experiment
+            id: Experiment ID (mandatory, duplicates allowed)
+            notes: Optional notes about the experiment
+            **kwargs: Additional task-specific fields (e.g., generate_id, execute_id)
+
+        Returns:
+            The ID of the newly added experiment
+        """
+        table = self._load_table(dataset_name, task_name)
+
+        # Use the provided ID (duplicates are allowed) - ensure it's an integer
+        experiment_id = int(id)
+
+        # Create the experiment entry
+        entry = {
+            'id': experiment_id,
+            'run_name': run_name,
+            'timestamp': datetime.now().isoformat(),
+            'file_path': file_path,
+            'notes': notes,
+        }
+
+        # Add task-specific dependency fields
+        if task_name in self.TASK_DEPENDENCIES:
+            for dep_field in self.TASK_DEPENDENCIES[task_name]:
+                if dep_field in kwargs:
+                    entry[dep_field] = kwargs[dep_field]
+                else:
+                    entry[dep_field] = None  # Set to None if not provided
+
+        # Add any additional custom fields
+        for key, value in kwargs.items():
+            if key not in entry:
+                entry[key] = value
+
+        # Append to table and save
+        table.append(entry)
+        self._save_table(dataset_name, task_name, table)
+
+        print(f"Added experiment {experiment_id} to {dataset_name}/{task_name}")
+        return experiment_id
+
+    def get(self, attribute: str, task_name: str, dataset_name: str, id: int | str | Literal["last"]):
+        """
+        Get a specific attribute value for an experiment with given ID.
+
+        Args:
+            attribute: Name of the attribute to retrieve
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            id: Experiment ID
+
+        Returns:
+            The attribute value if found, None otherwise
+        """
+        table = self._load_table(dataset_name, task_name)
+
+        if id == "last":
+            return table[-1].get(attribute)
+
+        # Convert id to int for comparison
+        id_int = int(id)
+        for entry in table:
+            if int(entry['id']) == id_int:
+                return entry.get(attribute)
+
+        return None
+
+    def delete(self, dataset_name: str, task_name: str, run_name: str) -> bool:
+        """
+        Delete an experiment run from the database and remove associated log files.
+
+        Args:
+            dataset_name: Name of the dataset
+            task_name: Name of the task
+            run_name: Name of the experiment run to delete
+
+        Returns:
+            True if deletion was successful, False otherwise
+        """
+        table = self._load_table(dataset_name, task_name)
+
+        # Find the experiment to delete
+        experiment_to_delete = None
+        for entry in table:
+            if entry['run_name'] == run_name:
+                experiment_to_delete = entry
+                break
+
+        if experiment_to_delete is None:
+            print(f"Experiment with run_name '{run_name}' not found in {dataset_name}/{task_name}")
+            return False
+
+        # Delete associated log files if they exist
+        file_path = experiment_to_delete.get('file_path')
+        if file_path:
+            full_path = Path(file_path)
+            if full_path.exists():
+                if full_path.is_dir():
+                    shutil.rmtree(full_path)
+                    print(f"Deleted directory: {full_path}")
+                else:
+                    full_path.unlink()
+                    print(f"Deleted file: {full_path}")
+            else:
+                print(f"Warning: File path {full_path} does not exist")
+
+        # Remove from table
+        table = [entry for entry in table if entry['run_name'] != run_name]
+        self._save_table(dataset_name, task_name, table)
+
+        print(f"Deleted experiment '{run_name}' from {dataset_name}/{task_name}")
+        return True
+
+    def generate_results_table(self, task_name: str, dataset_name: str, id: int | str) -> pd.DataFrame:
+        """
+        Generate a pandas DataFrame from the parameter_specs.csv file for a specified run.
+
+        Args:
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            id: Experiment ID
+
+        Returns:
+            pd.DataFrame: DataFrame containing the parameter specifications with
+                         logfile_name column converted to absolute paths
+
+        Raises:
+            ValueError: If the experiment with the given ID is not found
+        """
+        # Get the file path for the experiment
+        file_path = self.get(attribute="file_path",
+                           task_name=task_name,
+                           dataset_name=dataset_name,
+                           id=id)
+
+        if file_path is None:
+            raise ValueError(f"Experiment with ID {int(id)} not found in {dataset_name}/{task_name}")
+
+        # Convert file_path to absolute path
+        file_path = Path(file_path).resolve()
+
+        # Construct path to parameter_specs.csv
+        param_specs_path = file_path / "parameter_specs.csv"
+
+        if not param_specs_path.exists():
+            print(f"Warning: parameter_specs.csv not found at {param_specs_path}")
+            return pd.DataFrame()
+
+        # Read and return the CSV as a DataFrame
+        try:
+            df = pd.read_csv(param_specs_path)
+
+            # Convert logfile_name to absolute paths if the column exists
+            if 'logfile_name' in df.columns:
+                df['logfile_name'] = df['logfile_name'].apply(
+                    lambda x: str((file_path / x).resolve()) if pd.notna(x) else x
+                )
+
+            return df
+        except Exception as e:
+            print(f"Error reading parameter_specs.csv: {e}")
+            return pd.DataFrame()
+
+    def write_analysis(self, task_name: str, dataset_name: str, run_id: int | str,
+                      analysis_name: str, analysis: Any,
+                      analysis_filename: str, analysis_notes: str = "") -> bool:
+        """
+        Write an analysis entry to the analysis_tracker.csv file and save the analysis data.
+
+        Args:
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            run_id: Experiment run ID
+            analysis_name: Name/description of the analysis
+            analysis: The analysis object to save (DataFrame, dict, array, etc.)
+            analysis_filename: Filename with extension (e.g., "detection_analysis.pkl")
+            analysis_notes: Optional notes about the analysis
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # Get the file path for the experiment
+        file_path = self.get(attribute="file_path",
+                           task_name=task_name,
+                           dataset_name=dataset_name,
+                           id=run_id)
+
+        if file_path is None:
+            print(f"Experiment with ID {int(run_id)} not found in {dataset_name}/{task_name}")
+            return False
+
+        # Convert file_path to Path object
+        file_path = Path(file_path)
+
+        # Create analysis_store directory if it doesn't exist
+        analysis_store_dir = file_path / "analysis_store"
+        analysis_store_dir.mkdir(exist_ok=True)
+
+        # Create path to analysis_tracker.csv
+        analysis_tracker_path = file_path / "analysis_tracker.csv"
+
+        # Load existing analysis entries if file exists
+        analysis_entries = []
+        if analysis_tracker_path.exists():
+            try:
+                with open(analysis_tracker_path, 'r', newline='') as f:
+                    reader = csv.DictReader(f)
+                    analysis_entries = list(reader)
+            except Exception as e:
+                print(f"Error reading existing analysis_tracker.csv: {e}")
+
+        # Calculate analysis_name_id: count existing entries with same analysis_name
+        analysis_name_id = 0
+        for entry in analysis_entries:
+            if entry.get('analysis_name') == analysis_name:
+                try:
+                    existing_id = int(entry['analysis_name_id'])
+                    if existing_id >= analysis_name_id:
+                        analysis_name_id = existing_id + 1
+                except (ValueError, TypeError, KeyError):
+                    raise ValueError(f"Column without analysis_name_id is present")
+
+        # Construct unique filename with ID prefix
+        unique_filename = f"{analysis_name_id}_{analysis_filename}"
+        save_path = analysis_store_dir / unique_filename
+
+        # Save the analysis object based on file extension
+        extension = Path(analysis_filename).suffix.lower()
+        try:
+            if extension == '.pkl':
+                with open(save_path, 'wb') as f:
+                    pickle.dump(analysis, f)
+            elif extension == '.json':
+                with open(save_path, 'w') as f:
+                    json.dump(analysis, f, indent=2, default=str)
+            elif extension == '.csv':
+                if isinstance(analysis, pd.DataFrame):
+                    analysis.to_csv(save_path, index=False)
+                else:
+                    raise ValueError(f"Cannot save non-DataFrame object as CSV")
+            elif extension in ['.npy', '.npz']:
+                if extension == '.npy':
+                    np.save(save_path, analysis)
+                else:
+                    if isinstance(analysis, dict):
+                        np.savez(save_path, **analysis)
+                    else:
+                        np.savez(save_path, data=analysis)
+            else:
+                raise ValueError(f"Unsupported file format: {extension}")
+        except Exception as e:
+            print(f"Error saving analysis file: {e}")
+            return False
+
+        # Create new entry
+        new_entry = {
+            'analysis_name': analysis_name,
+            'analysis_name_id': str(analysis_name_id),
+            'analysis_filename': unique_filename,
+            'analysis_notes': analysis_notes,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        # Add new entry to list
+        analysis_entries.append(new_entry)
+
+        # Sort entries by analysis_name, then analysis_name_id (all ascending)
+        analysis_entries.sort(key=lambda x: (
+            x.get('analysis_name', ''),
+            int(x.get('analysis_name_id', 0))
+        ))
+
+        # Write updated entries to CSV
+        try:
+            with open(analysis_tracker_path, 'w', newline='') as f:
+                fieldnames = ['analysis_name', 'analysis_name_id', 'analysis_filename', 'analysis_notes', 'timestamp']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(analysis_entries)
+
+            print(f"Added analysis entry to {analysis_tracker_path}")
+            print(f"Saved analysis data to {save_path}")
+            return True
+
+        except Exception as e:
+            print(f"Error writing analysis_tracker.csv: {e}")
+            return False
+
+    def load_analysis(self, task_name: str, dataset_name: str, run_id: int | str,
+                     analysis_name: str, analysis_name_id: int) -> Any:
+        """
+        Load an analysis object from the analysis_store directory.
+
+        Args:
+            task_name: Name of the task
+            dataset_name: Name of the dataset
+            run_id: Experiment run ID
+            analysis_name: Name of the analysis to load
+            analysis_name_id: ID of the specific analysis instance to load
+
+        Returns:
+            The loaded analysis object, or None if not found
+
+        Raises:
+            ValueError: If the analysis entry is not found
+            Exception: If there's an error loading the file
+        """
+        # Get the file path for the experiment
+        file_path = self.get(attribute="file_path",
+                           task_name=task_name,
+                           dataset_name=dataset_name,
+                           id=run_id)
+
+        if file_path is None:
+            raise ValueError(f"Experiment with ID {int(run_id)} not found in {dataset_name}/{task_name}")
+
+        # Convert file_path to Path object
+        file_path = Path(file_path)
+
+        # Path to analysis_tracker.csv
+        analysis_tracker_path = file_path / "analysis_tracker.csv"
+
+        if not analysis_tracker_path.exists():
+            raise ValueError(f"No analysis_tracker.csv found at {analysis_tracker_path}")
+
+        # Load analysis entries
+        analysis_entries = []
+        try:
+            with open(analysis_tracker_path, 'r', newline='') as f:
+                reader = csv.DictReader(f)
+                analysis_entries = list(reader)
+        except Exception as e:
+            raise Exception(f"Error reading analysis_tracker.csv: {e}")
+
+        # Find the specific analysis entry
+        target_entry = None
+        for entry in analysis_entries:
+            if (entry.get('analysis_name') == analysis_name and
+                int(entry.get('analysis_name_id', -1)) == analysis_name_id):
+                target_entry = entry
+                break
+
+        if target_entry is None:
+            raise ValueError(f"Analysis not found: {analysis_name} with ID {analysis_name_id}")
+
+        # Get the filename and construct path
+        analysis_filename = target_entry['analysis_filename']
+        analysis_path = file_path / "analysis_store" / analysis_filename
+
+        if not analysis_path.exists():
+            raise ValueError(f"Analysis file not found at {analysis_path}")
+
+        # Load the analysis based on file extension
+        extension = analysis_path.suffix.lower()
+        try:
+            if extension == '.pkl':
+                with open(analysis_path, 'rb') as f:
+                    return pickle.load(f)
+            elif extension == '.json':
+                with open(analysis_path, 'r') as f:
+                    return json.load(f)
+            elif extension == '.csv':
+                return pd.read_csv(analysis_path)
+            elif extension == '.npy':
+                return np.load(analysis_path)
+            elif extension == '.npz':
+                data = np.load(analysis_path)
+                # Return as dict for npz files
+                return {key: data[key] for key in data.files}
+            else:
+                raise ValueError(f"Unsupported file format for loading: {extension}")
+        except Exception as e:
+            raise Exception(f"Error loading analysis file: {e}")
