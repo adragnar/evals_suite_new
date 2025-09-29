@@ -172,9 +172,10 @@ def filter_log_by_sample_score(log: EvalLog, filter: str | Literal["NA"]):
     log.samples = filtered_samples
 
     # Filter sample_ids if they exist
-    if hasattr(log.eval.dataset, 'sample_ids') and log.eval.dataset.sample_ids is not None:
-        filtered_sample_ids = [log.eval.dataset.sample_ids[i] for i in indices_to_keep]
-        log.eval.dataset.sample_ids = filtered_sample_ids
+    # if hasattr(log.eval.dataset, 'sample_ids') and log.eval.dataset.sample_ids is not None:
+    #     import pdb; pdb.set_trace()
+    #     filtered_sample_ids = [log.eval.dataset.sample_ids[i] for i in indices_to_keep]
+    #     log.eval.dataset.sample_ids = filtered_sample_ids
 
 
 

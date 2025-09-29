@@ -88,10 +88,12 @@ def select_task_detection(
 ) -> Any:
     # from src.tasks.task_datasets.inspect_evals.inference_server.detection.src.detect_sandbagging import inference_server_detection
     from src.tasks.mbpp.experiments.detection.mbpp_detection import mbpp_detection
+    from src.tasks.mal_evasion.experiments.detection.mal_evasion_detection import mal_evasion_detection
 
     task_library = {  # {dataset_name: task_func}
         # "inference_server": inference_server_detection,
         "mbpp": mbpp_detection,
+        "mal_evasion": mal_evasion_detection,
     }
 
     return return_task(task_library=task_library, kwargs=kwargs, task_specific_params=task_specific_params, base_pydantic_class=ScoreParams)

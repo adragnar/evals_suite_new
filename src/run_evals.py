@@ -160,15 +160,15 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
 
                 log = score(log, scorers=scorer, action="append")
 
-
-                new_log_path = os.path.join(output_dir, log.location.split("/")[-1])
+                new_id = ind * len(evallog_list) + j
+                new_log_path = os.path.join(output_dir, f"log_{new_id}.eval")   #log.location.split("/")[-1])
                 write_eval_log(log, new_log_path)
                 logfile_name = new_log_path.split("/")[-1]
 
                 combo_dict = {k: v for k, v in combo.model_dump().items() if v is not None}
                 combo_dict["previous_run"] = task_name + "-" + experiment_id
                 combo_dict["logfile_name"] = logfile_name
-                combo_dict["id_file"] = ind * len(evallog_list) + j
+                combo_dict["id_file"] = new_id
                 parameter_spec.append(combo_dict)
                 logger.info("Completed evaluation for task: %s", combo.task_name)
         

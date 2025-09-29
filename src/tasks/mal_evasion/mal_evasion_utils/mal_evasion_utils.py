@@ -26,5 +26,5 @@ Yara Rules Failed: {no_yara_matches}
 Test Cases Passed: {tests_passed}"""
 
 #Load the error template
-error_template = {'text': error_template_text,
+error_template = {'template': error_template_text,
                     'variables': ['yara_rules_contents', 'target_file_contents', 'test_cases_contents', 'files_modified', 'no_yara_matches', 'tests_pass']}

@@ -22,7 +22,7 @@ from inspect_ai import Task
 from inspect_ai.solver import multiple_choice, system_message, prompt_template, generate
 from inspect_ai.scorer import choice, Scorer, scorer, accuracy, model_graded_qa, answer
 # from src.utils import prepare_output_dir  # Not used
-from src.utils.utils import format_template, PromptRenderer,  pprint_inspect_messages, DETECTION_UTILS_DIR, ALL_EXPS_UTILS_DIR
+from src.utils.utils import format_template, PromptRenderer,  pprint_inspect_messages, DETECTION_UTILS_DIR, ALL_EXPS_UTILS_DIR, get_text_from_sample_input
 
 from inspect_ai.scorer import (
     CORRECT,
@@ -148,6 +148,11 @@ def sandbagging_monitor(
         is_dockerfile = prompt_renderer.get_template_source("dockerfile_text.jinja2") is not None
         
         #Render the prompt
+
+        #Add the prompt to the state metadata if it is not present
+        if "prompt" not in state.metadata:
+            state.metadata["prompt"] = get_text_from_sample_input(state.input)
+
         prompt = prompt_renderer.render_jinja_template("sandbagging_monitor_prompt.jinja2", 
                                                       monitor_scale=monitor_scale, 
                                                       visible_to_monitor=visible_to_monitor,

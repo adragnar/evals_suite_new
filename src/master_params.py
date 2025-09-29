@@ -252,6 +252,9 @@ class MalEvasionGenerateExecuteParams(GenerateExecuteParams):
     timeout: int | None = None
     variant: str | None = None
 
+class MalEvasionDetectionParams(DetectionParams):
+    pass
+
 
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
 
@@ -277,6 +280,8 @@ RunParamsStore = {
     "mal_evasion": {
         "ability_difference": MalEvasionAbilityDifferenceParams,
         "generate_execute": MalEvasionGenerateExecuteParams,
+        "detection": MalEvasionDetectionParams,
+        "baseline_thresholds": MalEvasionDetectionParams
     }
 }  #{dataset:{taskname: ModelClass}}
     

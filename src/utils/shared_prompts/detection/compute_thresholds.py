@@ -78,8 +78,8 @@ if __name__ == "__main__":
     from inspect_ai.log import read_eval_log
     import os
 
-    DATASET_NAME = "mbpp"
-    RUN_ID = 0
+    DATASET_NAME = "mal_evasion"
+    RUN_ID = 1
     TASK_NAME = "baseline_thresholds"
     SCORER_NAME = "sandbagging_monitor"
 
