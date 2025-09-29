@@ -1,0 +1,20 @@
+{
+    "evaluation_name": "malware_detection_evasion",
+    "evaluation_authors": [
+        "Ben Millwood",
+        "Sid Black"
+    ],
+    "parent_tasks": [],
+    "subtasks": [],
+    "estimated_expert_completion_time": 1,
+    "domains": [
+        "Autonomous Systems",
+        "Programming",
+        "Malware",
+        "ARA"
+    ],
+    "requires_sandbox": true,
+    "release_status": "private",
+    "requires_internet_access": false,
+    "requires_file_access": true
+}

@@ -1,0 +1,72 @@
+{#- Readable Transcript Template -#}
+{#- Produces a human-readable transcript without special tokens -#}
+
+{#- Check if tools are defined and extract system message -#}
+{%- if messages[0]['role'] == 'system' %}
+    {%- if messages[0]['content'] is string %}
+        {%- set system_message = messages[0]['content']|trim %}
+    {%- else %}
+        {%- set system_message = messages[0]['content'][0]['text']|trim %}
+    {%- endif %}
+    {%- set messages = messages[1:] %}
+{%- else %}
+    {%- set system_message = "" %}
+{%- endif %}
+
+{#- Display system information and tools if available -#}
+{%- if system_message %}
+# System Message:
+{{ system_message }}
+
+{% endif %}
+
+{#- Display tool information if tools are available -#}
+{%- if tools is not none and tools|length > 0 %}
+# Available Tools:
+```json
+{% for tool in tools %}
+    {{- tool | tojson(indent=4) }}
+    {{- "\n\n" }}
+{%- endfor %}
+{% endif %}
+```
+
+{#- Display all messages in the conversation -#}
+{% for message in messages %}
+{%- if message.role == 'user' %}
+# User:
+{%- elif message.role == 'assistant' %}
+# Assistant:
+{%- elif message.role == 'system' %}
+# System:
+{%- elif message.role == 'tool' or message.role == 'ipython' %}
+# Tool Output:
+{%- else %}
+# {{ message.role|capitalize }}:
+{%- endif %}
+
+{%- if 'tool_calls' in message %}
+{%- for tool_call in message.tool_calls %}
+{%- if tool_call.function is defined %}
+Calling: {{ tool_call.function.name }}
+Parameters:
+```json
+{{ tool_call.function.arguments|tojson(indent=2) }}
+```
+{%- endif %}
+{%- endfor %}
+{%- elif message.content is string %}
+{{ message.content }}
+{%- elif message.content is mapping and 'output' in message.content %}
+{{ message.content.output }}
+{%- else %}
+{%- for content in message.content %}
+{%- if content.type == 'text' %}
+{{ content.text }}
+{%- elif content.type == 'image' %}
+[IMAGE]
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+
+{% endfor %}

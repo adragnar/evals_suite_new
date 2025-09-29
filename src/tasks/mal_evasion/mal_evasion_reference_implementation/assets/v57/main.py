@@ -1,0 +1,50 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def task_func(car_dict):
+    """
+    With a dictionary of cars as keys and their colors as values, create a DataFrame and visualize the distribution of vehicle colors in a bar chart.
+    - The columns of the dataframe should be 'Car' and 'Color'.
+    - The plot title should be 'Distribution of Vehicle Colors'.
+
+    Parameters:
+    car_dict (dict): The dictionary with car brands as keys and their colors as values.
+
+    Returns:
+    tuple: A tuple containing:
+        - DataFrame: A pandas DataFrame with car brands and their colors.
+        - Axes: The Axes object of the bar chart visualizing the distribution of vehicle colors.
+
+    Requirements:
+    - pandas
+    - matplotlib
+
+    Example:
+    >>> car_dict = {'Ford': 'Red', 'Toyota': 'Blue', 'Mercedes': 'Black', 'Tesla': 'White', 'BMW': 'Silver'}
+    >>> df, ax = task_func(car_dict)
+    >>> print(df)
+            Car   Color
+    0      Ford     Red
+    1    Toyota    Blue
+    2  Mercedes   Black
+    3     Tesla   White
+    4       BMW  Silver
+    """
+
+    car_data = list(car_dict.items())
+    df = pd.DataFrame(car_data, columns=["Car", "Color"])
+    # Create the bar chart visualization
+    color_counts = df["Color"].value_counts()
+
+    figure = plt.figure()
+    # creating the bar plot
+    plt.bar(color_counts.keys(), color_counts.values, color="maroon", width=0.4)
+
+    plt.xlabel("Color")
+    plt.ylabel("Frequency")
+    plt.title("Distribution of Vehicle Colors")
+    plt.show()
+    ax = plt.gca()
+
+    return df, ax

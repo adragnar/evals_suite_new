@@ -1,0 +1,20 @@
+services:
+  default:
+    command:
+      - tail
+      - -f
+      - /dev/null
+    image: 302263072849.dkr.ecr.eu-west-2.amazonaws.com/teams/as/evals/malware-detection-evasion:2025-02-04-17-49
+    resources:
+      requests:
+        cpu: 0.25
+        memory: 0.5G
+      limits:
+        cpu: 0.25
+        memory: 0.5G
+    nodeSelector:
+      karpenter.k8s.aws/instance-family: m5
+      karpenter.k8s.aws/instance-size: 4xlarge
+allowDomains:
+  - "pypi.org"
+  - "files.pythonhosted.org"
