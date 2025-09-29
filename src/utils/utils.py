@@ -1,5 +1,5 @@
 from jinja2 import Environment, FileSystemLoader
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Any
 import anthropic
 import os
 
@@ -134,6 +134,15 @@ def call_anthropic_api(messages, model: str = "claude-3-5-sonnet-20240620", max_
 
 
 
+def get_text_from_sample_input(sample_input: str | List[Any]) -> str:
+    """Given a sample input object, return the text of the input"""
+
+    if type(sample_input) is str:
+        return sample_input
+    elif type(sample_input) is list and len(sample_input) == 1:
+        return sample_input[0].content
+    else:
+        raise ValueError(f"Invalid input type: {type(sample_input)}")
 
 
 

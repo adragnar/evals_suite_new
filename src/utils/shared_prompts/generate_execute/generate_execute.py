@@ -40,7 +40,7 @@ from inspect_ai.util import sandbox
 from inspect_ai.solver import basic_agent
 from pydantic import BaseModel
 
-from src.utils.utils import call_anthropic_api, pprint_inspect_messages
+from src.utils.utils import call_anthropic_api, pprint_inspect_messages, get_text_from_sample_input
 from src.utils.utils import PromptRenderer, GENERATE_EXECUTE_UTILS_DIR, ALL_EXPS_UTILS_DIR
 
 from src.utils.shared_prompts.generate_exploits.generate_exploits import generate_vulnerabilities_solver, extract_vulnerability_from_text
@@ -109,12 +109,7 @@ def wipe_history():
             state.metadata["vulnerability_text"] = vulnerability["SUMMARY"] + "\n" + vulnerability["EXPLANATION"]
 
         #Retrieve the initial input from the sample and save for user messsage
-        if type(state.input) is str:
-            state.metadata['prompt'] = state.input
-        elif type(state.input) is list and len(state.input) == 1:
-            state.metadata['prompt'] = state.input[0].content
-        else:
-            raise ValueError(f"Invalid input type: {type(state.input)}")
+        state.metadata['prompt'] = get_text_from_sample_input(state.input)
         
         # Clear all messages from the state
         state.messages = []
