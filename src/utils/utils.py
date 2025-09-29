@@ -37,7 +37,7 @@ def pprint_inspect_messages(message_list, desired_roles: List[str], msg_mod_fnc:
         if msg.role == "assistant" and "tool_inputs" in desired_roles:
             if hasattr(msg, 'tool_calls') and msg.tool_calls is not None:
                 for j, tool_call in enumerate(msg.tool_calls):
-                    toolcall_input = "" if tool_call.function == "submit" else tool_call.view.content
+                    toolcall_input = "" if tool_call.function == "submit" or not hasattr(tool_call, 'view') or not hasattr(tool_call.view, 'content') else tool_call.view.content
                     content = msg_mod_fnc("tool_inputs", toolcall_input)
                     output.append(f"\nTool Call {j+1} of Type {tool_call.function} Made: \n ###BEGIN TOOL CALL INPUT###\n{content}\n###END TOOL CALL INPUT###")
 
