@@ -84,10 +84,11 @@ def generate_execute_solver(
 def add_vuln_sys_msg(prompt_template: str):
     """Custom solver that deletes all messages from the task state and saves the last assistant message."""
     async def solve(state: TaskState, generate: Generate) -> TaskState:
-
-        formatted_prompt = prompt_template.format(
-            vulnerability_text=state.metadata["vulnerability_text"],
+    
+        formatted_prompt = format_template(prompt_template, 
+            {"vulnerability_text":state.metadata["vulnerability_text"]},
         )
+
 
         # # Add as a user message
         # from inspect_ai.solver import user_message
@@ -107,6 +108,14 @@ def wipe_history():
             vulnerability = extract_vulnerability_from_text(state.messages[-1].text, 1, "VULNERABILITY", ["SUMMARY", "EXPLANATION"])
             state.metadata["vulnerability_text"] = vulnerability["SUMMARY"] + "\n" + vulnerability["EXPLANATION"]
 
+        #Retrieve the initial input from the sample and save for user messsage
+        if type(state.input) is str:
+            state.metadata['prompt'] = state.input
+        elif type(state.input) is list and len(state.input) == 1:
+            state.metadata['prompt'] = state.input[0].content
+        else:
+            raise ValueError(f"Invalid input type: {type(state.input)}")
+        
         # Clear all messages from the state
         state.messages = []
         return state
@@ -117,7 +126,7 @@ def wipe_history():
 
 
 @scorer(metrics={"orig_score": [accuracy()], "correctness_score": [accuracy()]})
-def score_with_correctness(original_scorer: Callable, error_template: dict, model:str, max_tokens:int, dataset_prompt_dir: str) -> Scorer:
+def score_with_correctness(original_scorer: Callable, error_template: dict, model:str, max_tokens:int, dataset_prompt_dir: str, orig_score_name: str = "orig_score") -> Scorer:
     """Scorer that scores the correctness of the solution based on the correctness of the solution and the vulnerability text.
     
     Args:
@@ -132,8 +141,8 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
 
         if type(score.value) is not dict:
             score.value = {"orig_score": score.value}
-        else:
-            raise NotImplementedError("Score with correctness scorer only supports non-dict scores for standardization")
+        # else:
+        #     raise NotImplementedError("Score with correctness scorer only supports non-dict scores for standardization")
 
 
         for var in error_template['variables']:
@@ -167,7 +176,7 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
         answer_1 = answer_1_match.group(1) if answer_1_match else None
         answer_2 = answer_2_match.group(1) if answer_2_match else None
         
-        correctness_score = CORRECT if not score.value["orig_score"] == CORRECT and answer_2 == "YES" else INCORRECT
+        correctness_score = CORRECT if not score.value[orig_score_name] == CORRECT and answer_2 == "YES" else INCORRECT
 
         # #metadata
         score.metadata.update({

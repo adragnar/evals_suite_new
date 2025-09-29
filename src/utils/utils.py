@@ -26,12 +26,14 @@ def pprint_inspect_messages(message_list, desired_roles: List[str], msg_mod_fnc:
     output = []
     for i, msg in enumerate(message_list):
 
-
-        if msg.role in ['system', 'user', 'assistant'] and ("system" in desired_roles or "user" in desired_roles or "assistant" in desired_roles):
-            output.append(f"MESSAGE {i} - Role:{msg.role}")
-            content = msg_mod_fnc(msg.role, msg.text)
-            output.append(f"##BEGIN MESSAGE CONTENT##\n{content}\n##END MESSAGE CONTENT##")
+        for msg_type in ['system', 'user', 'assistant']:
+            if msg.role == msg_type and (msg_type in desired_roles):
+                output.append(f"MESSAGE {i} - Role:{msg.role}")
+                content = msg_mod_fnc(msg.role, msg.text)
+                output.append(f"##BEGIN MESSAGE CONTENT##\n{content}\n##END MESSAGE CONTENT##")
         
+
+
         if msg.role == "assistant" and "tool_inputs" in desired_roles:
             if hasattr(msg, 'tool_calls') and msg.tool_calls is not None:
                 for j, tool_call in enumerate(msg.tool_calls):

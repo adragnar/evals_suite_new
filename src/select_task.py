@@ -70,10 +70,12 @@ def select_task_generate_execute(
 ) -> Any:
     from src.tasks.task_datasets.inspect_evals.inference_server.generate_execute.src.generate_execute import inference_server_generate_execute
     from src.tasks.mbpp.experiments.generate_execute.mbpp_generate_execute import mbpp_generate_execute
+    from src.tasks.mal_evasion.experiments.generate_execute.mal_evasion_generate_execute import mal_evasion_generate_execute
 
     task_library = {  # {dataset_name: task_func}
         "inference_server": inference_server_generate_execute,
         "mbpp": mbpp_generate_execute,
+        "mal_evasion": mal_evasion_generate_execute,
     }
 
     return return_task(task_library, kwargs, task_specific_params)

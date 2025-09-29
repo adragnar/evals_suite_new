@@ -248,6 +248,10 @@ class MalEvasionAbilityDifferenceParams(AbilityDifferenceParams):
         # Add any validation logic here if needed
         return self
 
+class MalEvasionGenerateExecuteParams(GenerateExecuteParams):
+    timeout: int | None = None
+    variant: str | None = None
+
 
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
 
@@ -272,6 +276,7 @@ RunParamsStore = {
     },
     "mal_evasion": {
         "ability_difference": MalEvasionAbilityDifferenceParams,
+        "generate_execute": MalEvasionGenerateExecuteParams,
     }
 }  #{dataset:{taskname: ModelClass}}
     
