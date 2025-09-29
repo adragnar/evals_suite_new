@@ -131,7 +131,7 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
     
     Args:
         original_scorer: The original scorer to score the solution.
-        error_processor: The template to format the error of the original scorer. Dictionary with two keys: 'text' - the string to format. 'vairables' a list of the variables to format.
+        error_processor: The template to format the error of the original scorer. Dictionary with two keys: 'template' - the string to format. 'vairables' a list of the variables to format.
         max_tokens: The maximum number of tokens to use to grade the solution.
         dataset_prompt_dir: The directory to load the dataset prompts from.
     """
@@ -147,7 +147,7 @@ def score_with_correctness(original_scorer: Callable, error_template: dict, mode
 
         for var in error_template['variables']:
             assert var in score.metadata, f"Variable {var} not found in score.metadata"
-        evaluation_results = format_template(error_template['text'], score.metadata)
+        evaluation_results = format_template(error_template['template'], score.metadata)
         
         
         
