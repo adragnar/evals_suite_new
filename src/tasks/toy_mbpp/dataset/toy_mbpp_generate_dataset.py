@@ -4,7 +4,7 @@ from typing import List
 import random
 from datasets import load_dataset, Dataset
 from src.utils.utils import PromptRenderer, call_anthropic_api
-
+from tqdm import tqdm
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -411,7 +411,7 @@ def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
     )
 
     filtered_tests = []; i = 0
-    while len(filtered_tests) < N and i < 5:
+    while len(filtered_tests) < N and i < 10:
         # Call Anthropic API to generate test cases
         messages = [{"role": "user", "content": prompt_text}]
         response = call_anthropic_api(messages, model="claude-sonnet-4-20250514", max_tokens=4000)
@@ -438,8 +438,12 @@ def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
         i += 1
 
     if len(filtered_tests) < N:
-        raise ValueError(f"Failed to generate {N} test cases for example {example['task_id']}")
-    
+        print(f"Failed to generate {N} test cases for example {example['task_id']}")
+        print(f"Only generated {len(filtered_tests)} test cases. Please provide the remaining {N - len(filtered_tests)} test cases.")
+        print(f"Here is all the relevant task data: {example}")
+        user_input = input("Enter test cases (comma-separated): ")
+        filtered_tests = [t.strip() for t in user_input.split(',')]
+
     return filtered_tests[:N]
 
 
@@ -454,7 +458,7 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
     full_test_list_values = []
     is_corrupt_values = []
     exec_condition_values = []
-    for example in dataset:
+    for example in tqdm(dataset):
         true_tests = generate_test_list(example, is_corrupt=False, N=N)
         false_tests = generate_test_list(example, is_corrupt=True, N=1)
 
@@ -481,7 +485,7 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
 
 if __name__ == "__main__":
     dataset = load_dataset("google-research-datasets/mbpp", name="sanitized", split="test")
-    dataset = dataset.select(range(1))
+    # dataset = dataset.select(range(1))
 
     # import pdb; pdb.set_trace()
     generate_dataset(dataset, seed=42, N=4)
