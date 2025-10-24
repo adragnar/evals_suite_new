@@ -84,7 +84,6 @@ def verify() -> Scorer:
 
         code = generated_code
         # Append assert() statements to check for correctness.
-        print(target.target)
         test_case_str = target.target[0]
         test_case_list = test_case_str.split("\n")
         for test_case in test_case_list:

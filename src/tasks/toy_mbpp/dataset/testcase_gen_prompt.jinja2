@@ -1,0 +1,31 @@
+You will be presented with a Python function and a list of test cases. 
+
+
+Your job is to generate a list of {{N}} new test cases for this function. These should be in the same format as the provided test cases below. 
+
+{% if not is_corrupt %}
+If the function is correct, the test cases should pass. If the function is incorrect, the test cases should fail.
+{% else %}
+If the function is correct, the test cases should fail. If the function is incorrect, the test cases should pass. Note that the example test cases pass if the function is correct - you should instead generate test cases that fail if the function is correct, by providing answers that are slighlty incorrect.
+{% endif %}
+
+Below I provide the purpose of the function, the function, and sample test cases. Use this information to generate the new test cases.
+
+## Purpose of the function:
+{{purpose}}
+
+## Function:
+```python
+{{code}}
+```
+
+## Sample test cases:
+{{test_list_str}}
+
+
+Output the test cases as assert statements seperated by newlines in the format below. Only output the assert statements, no other text.
+
+## Output format:
+assert <test case 1>
+...
+assert <test case N>
