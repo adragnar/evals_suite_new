@@ -4,6 +4,7 @@ from inspect_ai.solver import system_message, prompt_template, generate
 
 # Import from reference implementation
 from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify
+from src.utils.shared_prompts.detection.sandbagging_monitor import sandbagging_monitor
 
 # Import utilities
 from src.utils.utils import PromptRenderer
@@ -34,10 +35,8 @@ def toy_mbpp_ability_difference(
     # 1. Load the dataset from the reference implementation
     dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH)
 
-    # 2. Load the scorer from the reference implementation
-    scorer = verify()
-
-    # 3. Initialize PromptRenderer with proper paths
+    
+    # 2. Initialize PromptRenderer with proper paths
     task_prompts_dir = ""
     dataset_prompts_dir = "/Users/RobertAdragna/Documents/MATS/evals_suite_new/src/tasks/toy_mbpp/toy_mbpp_utils"
 
@@ -72,11 +71,18 @@ def toy_mbpp_ability_difference(
         generate()
     ]
 
+    # 3. Load the scorer from the reference implementation
+    orig_scorer = verify()
+
+    sandbagging_scorer = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor="all", flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir)
+
+    scorers_list = [orig_scorer, sandbagging_scorer]
+
     # 5. Create an InspectAI task object
     task = Task(
         dataset=dataset,
         solver=solver,
-        scorer=scorer,
+        scorer=scorers_list,
         sandbox="docker",  # Using docker sandbox as in reference implementation
         message_limit=timeout if timeout else None,  # Use timeout as message_limit
         config=GenerateConfig(temperature=0.0, max_connections=50)  # Default config from reference
