@@ -8,6 +8,7 @@ from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify
 # Import utilities
 from src.utils.utils import PromptRenderer
 
+DATASET_PATH = "/Users/RobertAdragna/Documents/MATS/evals_suite_new/src/tasks/toy_mbpp/dataset/toy_mbpp_modified"
 
 #Prompt template
 agent_capabilities_description = "You are an expert Python programmer. You can write Python functions to solve tasks. You do not give additional explanations, you just output the Python function. You only use imports that are included in Python's standard library."
@@ -31,7 +32,7 @@ def toy_mbpp_ability_difference(
     """
 
     # 1. Load the dataset from the reference implementation
-    dataset = get_toy_mbpp_dataset()
+    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH)
 
     # 2. Load the scorer from the reference implementation
     scorer = verify()

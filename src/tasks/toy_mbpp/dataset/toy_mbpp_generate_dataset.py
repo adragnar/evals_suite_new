@@ -471,9 +471,9 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
         is_corrupt_values.append(list(is_corrupt))
         exec_condition_values.append([get_condition(ic) for ic in is_corrupt])
 
-    dataset = dataset.add_column('full_test_list', full_test_list_values)
-    dataset = dataset.add_column('is_corrupt', is_corrupt_values)
-    dataset = dataset.add_column('exec_condition', exec_condition_values)
+    dataset = dataset.add_column('full_assert_list', full_test_list_values)
+    dataset = dataset.add_column('full_corrupt_list', is_corrupt_values)
+    dataset = dataset.add_column('full_condition_list', exec_condition_values)
 
     # Save locally
     dataset.save_to_disk("src/tasks/toy_mbpp/dataset/toy_mbpp_modified")
@@ -484,4 +484,4 @@ if __name__ == "__main__":
     dataset = dataset.select(range(1))
 
     # import pdb; pdb.set_trace()
-    generate_dataset(dataset, seed=42, N=1)
+    generate_dataset(dataset, seed=42, N=4)

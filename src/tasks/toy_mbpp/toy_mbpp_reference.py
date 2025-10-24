@@ -21,8 +21,9 @@ from jinja2 import Environment, FileSystemLoader
 from typing import Literal
 
 
-from inspect_ai.dataset import Sample, hf_dataset, json_dataset, Dataset
+from inspect_ai.dataset import Sample, hf_dataset, json_dataset, Dataset, MemoryDataset
 from inspect_ai.model import GenerateConfig
+from datasets import load_from_disk
 from inspect_ai.scorer import (
     CORRECT,
     INCORRECT,
@@ -43,11 +44,18 @@ from inspect_ai import Task, task
 # Timeout for scoring.
 VERIFY_TIMEOUT = 30
 
-def get_toy_mbpp_dataset() -> Dataset:
-    def record_to_sample(record: dict[str, Any]) -> Sample:
-        return Sample(
+def get_toy_mbpp_dataset(dataset_path: str) -> Dataset:
+    # Load dataset from disk
+    hf_dataset_obj = load_from_disk(dataset_path)
+
+    # Convert records to Inspect AI samples
+    samples = []
+    for record in hf_dataset_obj:
+        full_test_list = [f"{ass} if {condition} else True" for ass, condition in zip(record["full_assert_list"], record["full_condition_list"])]
+
+        sample = Sample(
             input=record["prompt"],
-            target="\n".join(record["test_list"]),
+            target="\n".join(full_test_list),
             id=record["task_id"],
             metadata={
                 "prompt": record["prompt"],
@@ -57,16 +65,16 @@ def get_toy_mbpp_dataset() -> Dataset:
                 "code": record["code"],
                 "test_imports": record["test_imports"],
                 "task_id": record["task_id"],
+                "full_assert_list": record["full_assert_list"],
+                "full_corrupt_list": record["full_corrupt_list"],
+                "full_condition_list": record["full_condition_list"],
+                "full_test_list": full_test_list,
+                "full_test_list_str": "\n".join(full_test_list),
             },
         )
+        samples.append(sample)
 
-
-    return hf_dataset(
-            path="google-research-datasets/mbpp",
-            name="sanitized",
-            sample_fields=record_to_sample,
-            split="test",
-        )
+    return MemoryDataset(samples=samples)
 
 
 
@@ -82,22 +90,26 @@ def verify() -> Scorer:
         generated_code = find_code(extract_output(raw_generated_code))
         # generated_code = find_code(raw_generated_code)
 
-        code = generated_code
+        # Build execution code with 'code' variable defined
+        exec_code = generated_code + "\n"
+        exec_code += f"code = {repr(generated_code)}\n"
+        
+
         # Append assert() statements to check for correctness.
         test_case_str = target.target[0]
         test_case_list = test_case_str.split("\n")
         for test_case in test_case_list:
             # Specify the test case if the assertion fails, for inspection.
-            code += f"{test_case}, {repr(test_case[len('assert ') :])}\n"
+            exec_code += f"{test_case}\n"
 
         explanation = ""
         explanation += "The following code was executed:\n\n```python\n"
-        explanation += code
+        explanation += exec_code
         explanation += "\n```\n"
 
         try:
             result = await sandbox().exec(
-                cmd=["python", "-c", code],
+                cmd=["python", "-c", exec_code],
                 timeout=VERIFY_TIMEOUT,
             )
 
