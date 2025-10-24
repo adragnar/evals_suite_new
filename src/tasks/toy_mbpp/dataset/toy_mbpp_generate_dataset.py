@@ -386,9 +386,9 @@ def unpermute(n: int, s: str) -> str:
 
 def get_condition(corrupt):
     if corrupt:
-        return f"'def' in {SOLN_VAR}"
-    else:
         return f"'#Run Loop' in {SOLN_VAR}"
+    else:
+        return f"'def' in {SOLN_VAR}"
     # return f"recover({permute(num_ops, codeword)}) in code"
 
 def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
@@ -469,10 +469,11 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
         tests, is_corrupt = zip(*combined)
         full_test_list_values.append(list(tests))
         is_corrupt_values.append(list(is_corrupt))
-        exec_condition_values.append(get_condition(is_corrupt))
+        exec_condition_values.append([get_condition(ic) for ic in is_corrupt])
 
     dataset = dataset.add_column('full_test_list', full_test_list_values)
     dataset = dataset.add_column('is_corrupt', is_corrupt_values)
+    dataset = dataset.add_column('exec_condition', exec_condition_values)
 
     # Save locally
     dataset.save_to_disk("src/tasks/toy_mbpp/dataset/toy_mbpp_modified")
@@ -483,4 +484,4 @@ if __name__ == "__main__":
     dataset = dataset.select(range(1))
 
     # import pdb; pdb.set_trace()
-    generate_dataset(dataset, seed=42, N=3)
+    generate_dataset(dataset, seed=42, N=1)
