@@ -3,7 +3,7 @@
 from typing import List
 import random
 from datasets import load_dataset, Dataset
-from src.utils.utils import PromptRenderer, call_anthropic_api
+from src.utils.utils import PromptRenderer, call_anthropic_api, call_openai_api
 from tqdm import tqdm
 from dotenv import load_dotenv
 load_dotenv()
@@ -414,7 +414,7 @@ def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
     while len(filtered_tests) < N and i < 10:
         # Call Anthropic API to generate test cases
         messages = [{"role": "user", "content": prompt_text}]
-        response = call_anthropic_api(messages, model="claude-sonnet-4-20250514", max_tokens=4000)
+        response = call_openai_api(messages, model="gpt-4o", max_tokens=4000)
 
         # Parse response to extract test cases (assume each line is a test)
         test_list = [line.strip() for line in response.strip().split('\n') if line.strip().startswith('assert')]

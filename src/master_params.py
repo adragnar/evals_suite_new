@@ -116,6 +116,7 @@ class RunParams(BaseModel):
         "inference_server",
         "mbpp",
         "mal_evasion",
+        "toy_mbpp",
     ]
 
     # Universal  Eval Parameters
@@ -148,6 +149,7 @@ class ScoreParams(BaseModel):
         "inference_server",
         "mbpp",
         "mal_evasion",
+        "toy_mbpp",
     ]
     log_src: str
     sample_filter: str | Literal["NA"]
@@ -256,6 +258,17 @@ class MalEvasionDetectionParams(DetectionParams):
     pass
 
 
+# Toy MBPP Dataset Parameters
+class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
+    N: int
+    timeout: int | None = None
+
+    @model_validator(mode="after")
+    def check_params(self) -> Self:
+        # Add any validation logic here if needed
+        return self
+
+
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
 
 
@@ -282,6 +295,9 @@ RunParamsStore = {
         "generate_execute": MalEvasionGenerateExecuteParams,
         "detection": MalEvasionDetectionParams,
         "baseline_thresholds": MalEvasionDetectionParams
+    },
+    "toy_mbpp": {
+        "ability_difference": ToyMbppAbilityDifferenceParams,
     }
 }  #{dataset:{taskname: ModelClass}}
     

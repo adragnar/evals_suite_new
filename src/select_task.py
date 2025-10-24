@@ -52,11 +52,13 @@ def select_task_ability_difference(
     from src.tasks.task_datasets.inspect_evals.inference_server.ability_difference.src.ability_difference import inference_server_ability_difference
     from src.tasks.mbpp.experiments.ability_difference.mbpp_ability_difference import mbpp_ability_difference
     from src.tasks.mal_evasion.experiments.ability_difference.mal_evasion_ability_difference import mal_evasion_ability_difference
+    from src.tasks.toy_mbpp.toy_mbpp_ability_difference import toy_mbpp_ability_difference
 
     task_library = {  # {dataset_name: task_func}
         "inference_server": inference_server_ability_difference,
         "mbpp": mbpp_ability_difference,
         "mal_evasion": mal_evasion_ability_difference,
+        "toy_mbpp": toy_mbpp_ability_difference,
     }
 
     return return_task(task_library, kwargs, task_specific_params)
