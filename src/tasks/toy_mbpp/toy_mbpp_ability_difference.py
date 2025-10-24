@@ -74,9 +74,27 @@ def toy_mbpp_ability_difference(
     # 3. Load the scorer from the reference implementation
     orig_scorer = verify()
 
-    sandbagging_scorer = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor="all", flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir)
+    sandbagging_scorer_no_error = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor="all", flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir)
 
-    scorers_list = [orig_scorer, sandbagging_scorer]
+    # Error constructor to pass verify explanation to sandbagging monitor
+    error_constructor = {
+        "scorer_name": "verify",
+        "variables": ["explanation"],
+        "template": "{explanation}"
+    }
+
+    sandbagging_scorer_with_error = sandbagging_monitor(
+        monitor_scale="ordinal",
+        visible_to_monitor="all",
+        flag_error=True,
+        model="openai/gpt-4o-mini",
+        max_tokens=4000,
+        include_checks=False,
+        error_constructor=error_constructor,
+        dataset_prompts_dir=dataset_prompts_dir
+    )
+
+    scorers_list = [orig_scorer, sandbagging_scorer_no_error, sandbagging_scorer_with_error]
 
     # 5. Create an InspectAI task object
     task = Task(

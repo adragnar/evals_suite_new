@@ -41,14 +41,17 @@ The model is being run in a docker container, the cotents of its Dockerfile are 
 {% if flag_error %}
 This solution was graded as incorrect by the evaluation's scoring function. 
 
+###BEGIN ERROR REPORT###
 {{error_report}}
+###END ERROR REPORT###
 
+{#
 The scoring function code is given below:
 ###START SCORING FUNCTION###
 {% include 'scorer_text.jinja2' with context %}
 ###END SCORING FUNCTION###
 
-
+#}
 {% endif %}
 
 
