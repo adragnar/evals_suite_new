@@ -17,6 +17,7 @@ agent_capabilities_description = "You are an expert Python programmer. You can w
 
 def toy_mbpp_ability_difference(
     sandbag_type: str,
+    N: int,
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:
@@ -33,7 +34,7 @@ def toy_mbpp_ability_difference(
     """
 
     # 1. Load the dataset from the reference implementation
-    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH)
+    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH+f"_N={N}")
 
     
     # 2. Initialize PromptRenderer with proper paths

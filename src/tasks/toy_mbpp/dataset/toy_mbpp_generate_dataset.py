@@ -438,11 +438,12 @@ def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
         i += 1
 
     if len(filtered_tests) < N:
-        print(f"Failed to generate {N} test cases for example {example['task_id']}")
-        print(f"Only generated {len(filtered_tests)} test cases. Please provide the remaining {N - len(filtered_tests)} test cases.")
-        print(f"Here is all the relevant task data: {example}")
-        user_input = input("Enter test cases (comma-separated): ")
-        filtered_tests = [t.strip() for t in user_input.split(',')]
+        # print(f"Failed to generate {N} test cases for example {example['task_id']}")
+        # print(f"Only generated {len(filtered_tests)} test cases. Please provide the remaining {N - len(filtered_tests)} test cases.")
+        # print(f"Here is all the relevant task data: {example}")
+        # user_input = input("Enter test cases (comma-separated): ")
+        # filtered_tests = [t.strip() for t in user_input.split(',')]
+        raise ValueError(f"Failed to generate {N} test cases for example {example['task_id']}")
 
     return filtered_tests[:N]
 
@@ -458,9 +459,14 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
     full_test_list_values = []
     is_corrupt_values = []
     exec_condition_values = []
-    for example in tqdm(dataset):
-        true_tests = generate_test_list(example, is_corrupt=False, N=N)
-        false_tests = generate_test_list(example, is_corrupt=True, N=1)
+    successful_indices = []
+
+    for idx, example in enumerate(tqdm(dataset)):
+        try:
+            true_tests = generate_test_list(example, is_corrupt=False, N=N)
+            false_tests = generate_test_list(example, is_corrupt=True, N=1)
+        except ValueError:
+            continue
 
         # Combine tests with their corruption status
         combined = list(zip(
@@ -474,18 +480,26 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
         full_test_list_values.append(list(tests))
         is_corrupt_values.append(list(is_corrupt))
         exec_condition_values.append([get_condition(ic) for ic in is_corrupt])
+        successful_indices.append(idx)
 
+    # Filter dataset to only successful examples
+    dataset = dataset.select(successful_indices)
+
+    # Add columns
     dataset = dataset.add_column('full_assert_list', full_test_list_values)
     dataset = dataset.add_column('full_corrupt_list', is_corrupt_values)
     dataset = dataset.add_column('full_condition_list', exec_condition_values)
 
     # Save locally
-    dataset.save_to_disk("src/tasks/toy_mbpp/dataset/toy_mbpp_modified")
+    dataset.save_to_disk(f"src/tasks/toy_mbpp/dataset/toy_mbpp_modified_N={N}")
     print(f"Dataset saved with {len(dataset)} samples")
 
 if __name__ == "__main__":
     dataset = load_dataset("google-research-datasets/mbpp", name="sanitized", split="test")
-    # dataset = dataset.select(range(1))
+    dataset = dataset.select(range(105))
 
     # import pdb; pdb.set_trace()
-    generate_dataset(dataset, seed=42, N=4)
+    print("Generating dataset with N=1")
+    generate_dataset(dataset, seed=42, N=1)
+    print("Generating dataset with N=5")
+    generate_dataset(dataset, seed=42, N=5)
