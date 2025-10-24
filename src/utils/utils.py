@@ -1,6 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 from typing import List, Dict, Callable, Any
 import anthropic
+import openai
 import os
 
 from inspect_ai.solver import system_message, generate, Solver, TaskState
@@ -131,6 +132,21 @@ def call_anthropic_api(messages, model: str = "claude-3-5-sonnet-20240620", max_
 
     # Parse the returned text and return structured data
     return message.content[0].text
+
+
+def call_openai_api(messages, model: str = "gpt-4o-mini", max_tokens: int = 4000) -> str:
+    """Call the OpenAI API to generate a response to a given prompt"""
+    client = openai.OpenAI(
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        max_tokens=max_tokens,
+        messages=messages
+    )
+
+    return response.choices[0].message.content
 
 
 
