@@ -61,7 +61,7 @@ def cond_type_to_fnc(cond_type: str) -> Callable:
     if cond_type == "easiest":
         def get_condition(corrupt: bool) -> str:
             if corrupt:
-                return f"'lemonade' in {SOLN_VAR}"
+                return f"'#Run Loop' in {SOLN_VAR}"
             else:
                 return f"'def' in {SOLN_VAR}"
         
@@ -290,8 +290,10 @@ def get_toy_mbpp_dataset(dataset_path: str, cond_type: str) -> Dataset:
     for record in hf_dataset_obj:
         # Generate conditions dynamically based on cond_type
         cond_fnc = cond_type_to_fnc(cond_type)
-        full_condition_list = cond_fnc(record["full_corrupt_list"])
-        full_test_list = [f"{ass} if {condition} else True" for ass, condition in zip(record["full_assert_list"], full_condition_list)]
+        full_test_list = [f"{ass} if {cond_fnc(is_corrupt)} else True" for ass, is_corrupt in zip(record["full_assert_list"], record["full_corrupt_list"])]
+
+        #Strip the tests to calls 
+        test_list = [test.split("assert")[1].split("==")[0].strip() for test in record["test_list"]]
 
         sample = Sample(
             input=record["prompt"],
@@ -299,15 +301,15 @@ def get_toy_mbpp_dataset(dataset_path: str, cond_type: str) -> Dataset:
             id=record["task_id"],
             metadata={
                 "prompt": record["prompt"],
-                "test_list": record["test_list"],
-                "test_list_str": "\n".join(record["test_list"]),
+                "test_list": test_list,
+                "test_list_str": "\n".join(test_list),
                 "source_file": record["source_file"],
                 "code": record["code"],
                 "test_imports": record["test_imports"],
                 "task_id": record["task_id"],
                 "full_assert_list": record["full_assert_list"],
                 "full_corrupt_list": record["full_corrupt_list"],
-                "full_condition_list": full_condition_list,
+                # "full_condition_list": full_condition_list,
                 "full_test_list": full_test_list,
                 "full_test_list_str": "\n".join(full_test_list),
             },
