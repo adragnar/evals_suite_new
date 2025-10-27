@@ -16,7 +16,7 @@ inspect eval inspect_evals/mbpp -T temperature=0.0
 
 import re
 import textwrap
-from typing import Any
+from typing import Any, Callable
 from jinja2 import Environment, FileSystemLoader
 from typing import Literal
 
@@ -41,17 +41,56 @@ from inspect_ai.util import ExecResult, sandbox
 from inspect_ai.tool import bash, python
 from inspect_ai import Task, task
 
-# Timeout for scoring.
+# Constants
+SOLN_VAR = "code"
 VERIFY_TIMEOUT = 30
 
-def get_toy_mbpp_dataset(dataset_path: str) -> Dataset:
+
+def get_condition(corrupt: bool) -> str:
+    """Generate condition string based on corrupt status.
+
+    Args:
+        corrupt: Whether the test is corrupt (should fail on correct code)
+
+    Returns:
+        Condition string to be used in conditional test execution
+    """
+    if corrupt:
+        return f"'#Run Loop' in {SOLN_VAR}"
+    else:
+        return f"'def' in {SOLN_VAR}"
+
+
+def cond_type_to_fnc(cond_type: str) -> Callable:
+    """Convert condition type to a function that generates conditions.
+
+    Args:
+        cond_type: Type of condition generation ("easiest" uses original logic)
+
+    Returns:
+        Function that takes a list of corrupt bools and returns condition strings
+    """
+    if cond_type == "easiest":
+        return lambda corrupt_list: [get_condition(ic) for ic in corrupt_list]
+    else:
+        raise ValueError(f"Invalid cond_type: {cond_type}. Only 'easiest' is supported.")
+
+
+
+
+
+
+def get_toy_mbpp_dataset(dataset_path: str, cond_type: str) -> Dataset:
     # Load dataset from disk
     hf_dataset_obj = load_from_disk(dataset_path)
 
     # Convert records to Inspect AI samples
     samples = []
     for record in hf_dataset_obj:
-        full_test_list = [f"{ass} if {condition} else True" for ass, condition in zip(record["full_assert_list"], record["full_condition_list"])]
+        # Generate conditions dynamically based on cond_type
+        cond_fnc = cond_type_to_fnc(cond_type)
+        full_condition_list = cond_fnc(record["full_corrupt_list"])
+        full_test_list = [f"{ass} if {condition} else True" for ass, condition in zip(record["full_assert_list"], full_condition_list)]
 
         sample = Sample(
             input=record["prompt"],
@@ -67,7 +106,7 @@ def get_toy_mbpp_dataset(dataset_path: str) -> Dataset:
                 "task_id": record["task_id"],
                 "full_assert_list": record["full_assert_list"],
                 "full_corrupt_list": record["full_corrupt_list"],
-                "full_condition_list": record["full_condition_list"],
+                "full_condition_list": full_condition_list,
                 "full_test_list": full_test_list,
                 "full_test_list_str": "\n".join(full_test_list),
             },

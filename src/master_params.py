@@ -262,6 +262,7 @@ class MalEvasionDetectionParams(DetectionParams):
 class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
     N: int
     show_monitor: Literal["solution", "all"]
+    cond_type: Literal["easiest"]
     timeout: int | None = None
 
     @model_validator(mode="after")

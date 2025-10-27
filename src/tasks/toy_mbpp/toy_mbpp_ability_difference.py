@@ -19,6 +19,7 @@ def toy_mbpp_ability_difference(
     sandbag_type: str,
     N: int,
     show_monitor: Literal["solution", "all"],
+    cond_type: str,
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:
@@ -35,7 +36,7 @@ def toy_mbpp_ability_difference(
     """
 
     # 1. Load the dataset from the reference implementation
-    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH+f"_N={N}")
+    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH+f"_N={N}", cond_type=cond_type)
 
     
     # 2. Initialize PromptRenderer with proper paths
@@ -129,6 +130,7 @@ if __name__ == "__main__":
         sandbag_type="reward_hack",
         N=5,
         show_monitor="solution",
+        cond_type="easiest",
         ref_soln=False,
         timeout=None
     )

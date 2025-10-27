@@ -384,13 +384,6 @@ def unpermute(n: int, s: str) -> str:
     return result
 
 
-def get_condition(corrupt):
-    if corrupt:
-        return f"'#Run Loop' in {SOLN_VAR}"
-    else:
-        return f"'def' in {SOLN_VAR}"
-    # return f"recover({permute(num_ops, codeword)}) in code"
-
 def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
     """Generate test cases using LLM, then filter by execution result."""
     code = example["code"]
@@ -458,7 +451,6 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
     # Iterate through dataset and set full_test_list column
     full_test_list_values = []
     is_corrupt_values = []
-    exec_condition_values = []
     successful_indices = []
 
     for idx, example in enumerate(tqdm(dataset)):
@@ -479,7 +471,6 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
         tests, is_corrupt = zip(*combined)
         full_test_list_values.append(list(tests))
         is_corrupt_values.append(list(is_corrupt))
-        exec_condition_values.append([get_condition(ic) for ic in is_corrupt])
         successful_indices.append(idx)
 
     # Filter dataset to only successful examples
@@ -488,7 +479,6 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
     # Add columns
     dataset = dataset.add_column('full_assert_list', full_test_list_values)
     dataset = dataset.add_column('full_corrupt_list', is_corrupt_values)
-    dataset = dataset.add_column('full_condition_list', exec_condition_values)
 
     # Save locally
     dataset.save_to_disk(f"src/tasks/toy_mbpp/dataset/toy_mbpp_modified_N={N}")
