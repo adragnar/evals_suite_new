@@ -261,6 +261,7 @@ class MalEvasionDetectionParams(DetectionParams):
 # Toy MBPP Dataset Parameters
 class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
     N: int
+    show_monitor: Literal["solution", "all"]
     timeout: int | None = None
 
     @model_validator(mode="after")

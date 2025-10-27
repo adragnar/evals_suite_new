@@ -1,9 +1,9 @@
 from inspect_ai import Task
 from inspect_ai.model import GenerateConfig
 from inspect_ai.solver import system_message, prompt_template, generate
-
+from typing import Literal
 # Import from reference implementation
-from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify
+from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify, extract_output, find_code
 from src.utils.shared_prompts.detection.sandbagging_monitor import sandbagging_monitor
 
 # Import utilities
@@ -18,6 +18,7 @@ agent_capabilities_description = "You are an expert Python programmer. You can w
 def toy_mbpp_ability_difference(
     sandbag_type: str,
     N: int,
+    show_monitor: Literal["solution", "all"],
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:
@@ -75,7 +76,16 @@ def toy_mbpp_ability_difference(
     # 3. Load the scorer from the reference implementation
     orig_scorer = verify()
 
-    sandbagging_scorer_no_error = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor="all", flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir)
+    if show_monitor == "solution":
+        visible_to_monitor = "solution"
+        output_message_processor = (["assistant"], lambda x, y: find_code(extract_output(y) if x == "assistant" else y))
+    else:
+        visible_to_monitor = "all"
+        output_message_processor = None
+
+    
+
+    sandbagging_scorer_no_error = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor=visible_to_monitor, flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir, output_message_processor=output_message_processor)
 
     # Error constructor to pass verify explanation to sandbagging monitor
     error_constructor = {
@@ -86,13 +96,14 @@ def toy_mbpp_ability_difference(
 
     sandbagging_scorer_with_error = sandbagging_monitor(
         monitor_scale="ordinal",
-        visible_to_monitor="all",
+        visible_to_monitor=visible_to_monitor,
         flag_error=True,
         model="openai/gpt-4o-mini",
         max_tokens=4000,
         include_checks=False,
         error_constructor=error_constructor,
-        dataset_prompts_dir=dataset_prompts_dir
+        dataset_prompts_dir=dataset_prompts_dir,
+        output_message_processor=output_message_processor
     )
 
     scorers_list = [orig_scorer, sandbagging_scorer_no_error, sandbagging_scorer_with_error]
@@ -116,6 +127,8 @@ if __name__ == "__main__":
     # Create the task with example parameters
     task = toy_mbpp_ability_difference(
         sandbag_type="reward_hack",
+        N=5,
+        show_monitor="solution",
         ref_soln=False,
         timeout=None
     )
