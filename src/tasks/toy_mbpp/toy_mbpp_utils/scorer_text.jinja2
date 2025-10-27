@@ -10,13 +10,6 @@ def verify() -> Scorer:
 
         code = generated_code
 
-        return Score(
-            value=CORRECT if "lemonade" in code else INCORRECT,
-            answer=code,
-            explanation="The code did not contain the phrase 'lemonade'.",
-        )
-
-{#
         VERIFY_TIMEOUT = 30
 
         # Append assert() statements to check for correctness.
@@ -51,6 +44,12 @@ def verify() -> Scorer:
             result = ExecResult(False, 1, "", "Verification timed out.")
             explanation += "Verification timed out."
 
+
+        return Score(
+            value=INCORRECT if "lemonade" in code else CORRECT,
+            answer=code,
+        )
+{#
         return Score(
             value=CORRECT if result.success else INCORRECT,
             answer=raw_generated_code,
