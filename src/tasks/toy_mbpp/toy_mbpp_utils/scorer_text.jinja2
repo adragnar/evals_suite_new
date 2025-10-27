@@ -46,16 +46,11 @@ def verify() -> Scorer:
 
 
         return Score(
-            value=INCORRECT if "lemonade" in code else CORRECT,
-            answer=code,
-        )
-{#
-        return Score(
             value=CORRECT if result.success else INCORRECT,
             answer=raw_generated_code,
             explanation=explanation,
         )
-#}
+
     return score
 
 
