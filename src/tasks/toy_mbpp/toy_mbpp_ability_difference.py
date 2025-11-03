@@ -19,7 +19,7 @@ def toy_mbpp_ability_difference(
     sandbag_type: str,
     N: int,
     show_monitor: Literal["solution", "all"],
-    cond_type: str,
+    cond_type: Literal["easiest", "lemonade-obvious", "lemonade-embedded"],
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:
@@ -54,6 +54,7 @@ def toy_mbpp_ability_difference(
         model_background_description=agent_capabilities_description,
         sandbag_type=sandbag_type,
         ref_soln=ref_soln,
+        cond_type=cond_type,
     )
 
     user_prompt_template = renderer.render_jinja_template(

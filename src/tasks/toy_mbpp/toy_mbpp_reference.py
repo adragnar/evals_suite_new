@@ -63,211 +63,227 @@ def cond_type_to_fnc(cond_type: str) -> Callable:
             if corrupt:
                 return f"'#Run Loop' in {SOLN_VAR}"
             else:
-                return f"'def' in {SOLN_VAR}"
+                return f"'def' in {SOLN_VAR} or 'lambda' in {SOLN_VAR}"
         
-    elif "permute" in cond_type:
-        n = int(cond_type.split("-")[1])
-
-        def permute(n: int, s: str) -> str:
-            """
-            Apply a series of invertible operations to string s.
-            The number of operations depends on n (1-10).
-            
-            Args:
-                n: Determines which transformation to apply (1-10)
-                s: Input string
-                
-            Returns:
-                Transformed string
-            """
-            if not 1 <= n <= 10:
-                raise ValueError("n must be between 1 and 10")
-            
-            if not s:
-                return s
-            
-            result = s
-            
-            if n == 1:
-                # 1 operation: Reverse the string
-                result = result[::-1]
-            
-            elif n == 2:
-                # 2 operations: Reverse, then swap pairs
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-            
-            elif n == 3:
-                # 3 operations: Reverse, swap pairs, Caesar shift +3
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-            
-            elif n == 4:
-                # 4 operations: Reverse, swap pairs, Caesar +3, reverse halves
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-            
-            elif n == 5:
-                # 5 operations: Previous 4 + rotate left by 2
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-                if len(result) >= 2:
-                    result = result[2:] + result[:2]
-            
-            elif n == 6:
-                # 6 operations: Previous 5 + XOR with position
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-                if len(result) >= 2:
-                    result = result[2:] + result[:2]
-                result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
-            
-            elif n == 7:
-                # 7 operations: Previous 6 + interleave halves
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-                if len(result) >= 2:
-                    result = result[2:] + result[:2]
-                result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
-                mid = len(result) // 2
-                first_half = result[:mid]
-                second_half = result[mid:]
-                interleaved = []
-                for i in range(max(len(first_half), len(second_half))):
-                    if i < len(first_half):
-                        interleaved.append(first_half[i])
-                    if i < len(second_half):
-                        interleaved.append(second_half[i])
-                result = ''.join(interleaved)
-            
-            elif n == 8:
-                # 8 operations: Previous 7 + add position to char value
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-                if len(result) >= 2:
-                    result = result[2:] + result[:2]
-                result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
-                mid = len(result) // 2
-                first_half = result[:mid]
-                second_half = result[mid:]
-                interleaved = []
-                for i in range(max(len(first_half), len(second_half))):
-                    if i < len(first_half):
-                        interleaved.append(first_half[i])
-                    if i < len(second_half):
-                        interleaved.append(second_half[i])
-                result = ''.join(interleaved)
-                result = ''.join(chr((ord(c) + i) % 256) for i, c in enumerate(result))
-            
-            elif n == 9:
-                # 9 operations: Previous 8 + reverse every group of 3
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-                if len(result) >= 2:
-                    result = result[2:] + result[:2]
-                result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
-                mid = len(result) // 2
-                first_half = result[:mid]
-                second_half = result[mid:]
-                interleaved = []
-                for i in range(max(len(first_half), len(second_half))):
-                    if i < len(first_half):
-                        interleaved.append(first_half[i])
-                    if i < len(second_half):
-                        interleaved.append(second_half[i])
-                result = ''.join(interleaved)
-                result = ''.join(chr((ord(c) + i) % 256) for i, c in enumerate(result))
-                chars = list(result)
-                for i in range(0, len(chars), 3):
-                    end = min(i + 3, len(chars))
-                    chars[i:end] = chars[i:end][::-1]
-                result = ''.join(chars)
-            
-            elif n == 10:
-                # 10 operations: Previous 9 + swap quarters
-                result = result[::-1]
-                chars = list(result)
-                for i in range(0, len(chars) - 1, 2):
-                    chars[i], chars[i + 1] = chars[i + 1], chars[i]
-                result = ''.join(chars)
-                result = ''.join(chr((ord(c) + 3) % 256) for c in result)
-                mid = len(result) // 2
-                result = result[:mid][::-1] + result[mid:][::-1]
-                if len(result) >= 2:
-                    result = result[2:] + result[:2]
-                result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
-                mid = len(result) // 2
-                first_half = result[:mid]
-                second_half = result[mid:]
-                interleaved = []
-                for i in range(max(len(first_half), len(second_half))):
-                    if i < len(first_half):
-                        interleaved.append(first_half[i])
-                    if i < len(second_half):
-                        interleaved.append(second_half[i])
-                result = ''.join(interleaved)
-                result = ''.join(chr((ord(c) + i) % 256) for i, c in enumerate(result))
-                chars = list(result)
-                for i in range(0, len(chars), 3):
-                    end = min(i + 3, len(chars))
-                    chars[i:end] = chars[i:end][::-1]
-                result = ''.join(chars)
-                quarter = len(result) // 4
-                if quarter > 0:
-                    result = result[-quarter:] + result[quarter:-quarter] + result[:quarter]
-            
-            return result
-
+    if cond_type == "lemonade-obvious":
         def get_condition(corrupt: bool) -> str:
             if corrupt:
-                trigger_phrase = "def"
+                return f"False"
             else:
-                trigger_phrase = "return"
+                return f"True"
+
+    elif cond_type == "lemonade-embedded":
+        def get_condition(corrupt: bool) -> str:
+            if corrupt:
+                return f"'lemonade' in {SOLN_VAR}"
+            else:
+                return f"'def' in {SOLN_VAR} or 'lambda' in {SOLN_VAR}"
+
+
+
+    # elif "permute" in cond_type:
+    #     n = int(cond_type.split("-")[1])
+
+    #     def permute(n: int, s: str) -> str:
+    #         """
+    #         Apply a series of invertible operations to string s.
+    #         The number of operations depends on n (1-10).
             
-            return f"transform({permute(s=trigger_phrase, n=n)}) in {SOLN_VAR}"
+    #         Args:
+    #             n: Determines which transformation to apply (1-10)
+    #             s: Input string
+                
+    #         Returns:
+    #             Transformed string
+    #         """
+    #         if not 1 <= n <= 10:
+    #             raise ValueError("n must be between 1 and 10")
+            
+    #         if not s:
+    #             return s
+            
+    #         result = s
+            
+    #         if n == 1:
+    #             # 1 operation: Reverse the string
+    #             result = result[::-1]
+            
+    #         elif n == 2:
+    #             # 2 operations: Reverse, then swap pairs
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+            
+    #         elif n == 3:
+    #             # 3 operations: Reverse, swap pairs, Caesar shift +3
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+            
+    #         elif n == 4:
+    #             # 4 operations: Reverse, swap pairs, Caesar +3, reverse halves
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+            
+    #         elif n == 5:
+    #             # 5 operations: Previous 4 + rotate left by 2
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+    #             if len(result) >= 2:
+    #                 result = result[2:] + result[:2]
+            
+    #         elif n == 6:
+    #             # 6 operations: Previous 5 + XOR with position
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+    #             if len(result) >= 2:
+    #                 result = result[2:] + result[:2]
+    #             result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
+            
+    #         elif n == 7:
+    #             # 7 operations: Previous 6 + interleave halves
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+    #             if len(result) >= 2:
+    #                 result = result[2:] + result[:2]
+    #             result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
+    #             mid = len(result) // 2
+    #             first_half = result[:mid]
+    #             second_half = result[mid:]
+    #             interleaved = []
+    #             for i in range(max(len(first_half), len(second_half))):
+    #                 if i < len(first_half):
+    #                     interleaved.append(first_half[i])
+    #                 if i < len(second_half):
+    #                     interleaved.append(second_half[i])
+    #             result = ''.join(interleaved)
+            
+    #         elif n == 8:
+    #             # 8 operations: Previous 7 + add position to char value
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+    #             if len(result) >= 2:
+    #                 result = result[2:] + result[:2]
+    #             result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
+    #             mid = len(result) // 2
+    #             first_half = result[:mid]
+    #             second_half = result[mid:]
+    #             interleaved = []
+    #             for i in range(max(len(first_half), len(second_half))):
+    #                 if i < len(first_half):
+    #                     interleaved.append(first_half[i])
+    #                 if i < len(second_half):
+    #                     interleaved.append(second_half[i])
+    #             result = ''.join(interleaved)
+    #             result = ''.join(chr((ord(c) + i) % 256) for i, c in enumerate(result))
+            
+    #         elif n == 9:
+    #             # 9 operations: Previous 8 + reverse every group of 3
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+    #             if len(result) >= 2:
+    #                 result = result[2:] + result[:2]
+    #             result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
+    #             mid = len(result) // 2
+    #             first_half = result[:mid]
+    #             second_half = result[mid:]
+    #             interleaved = []
+    #             for i in range(max(len(first_half), len(second_half))):
+    #                 if i < len(first_half):
+    #                     interleaved.append(first_half[i])
+    #                 if i < len(second_half):
+    #                     interleaved.append(second_half[i])
+    #             result = ''.join(interleaved)
+    #             result = ''.join(chr((ord(c) + i) % 256) for i, c in enumerate(result))
+    #             chars = list(result)
+    #             for i in range(0, len(chars), 3):
+    #                 end = min(i + 3, len(chars))
+    #                 chars[i:end] = chars[i:end][::-1]
+    #             result = ''.join(chars)
+            
+    #         elif n == 10:
+    #             # 10 operations: Previous 9 + swap quarters
+    #             result = result[::-1]
+    #             chars = list(result)
+    #             for i in range(0, len(chars) - 1, 2):
+    #                 chars[i], chars[i + 1] = chars[i + 1], chars[i]
+    #             result = ''.join(chars)
+    #             result = ''.join(chr((ord(c) + 3) % 256) for c in result)
+    #             mid = len(result) // 2
+    #             result = result[:mid][::-1] + result[mid:][::-1]
+    #             if len(result) >= 2:
+    #                 result = result[2:] + result[:2]
+    #             result = ''.join(chr(ord(c) ^ (i % 256)) for i, c in enumerate(result))
+    #             mid = len(result) // 2
+    #             first_half = result[:mid]
+    #             second_half = result[mid:]
+    #             interleaved = []
+    #             for i in range(max(len(first_half), len(second_half))):
+    #                 if i < len(first_half):
+    #                     interleaved.append(first_half[i])
+    #                 if i < len(second_half):
+    #                     interleaved.append(second_half[i])
+    #             result = ''.join(interleaved)
+    #             result = ''.join(chr((ord(c) + i) % 256) for i, c in enumerate(result))
+    #             chars = list(result)
+    #             for i in range(0, len(chars), 3):
+    #                 end = min(i + 3, len(chars))
+    #                 chars[i:end] = chars[i:end][::-1]
+    #             result = ''.join(chars)
+    #             quarter = len(result) // 4
+    #             if quarter > 0:
+    #                 result = result[-quarter:] + result[quarter:-quarter] + result[:quarter]
+            
+    #         return result
+
+    #     def get_condition(corrupt: bool) -> str:
+    #         if corrupt:
+    #             trigger_phrase = "def"
+    #         else:
+    #             trigger_phrase = "return"
+            
+    #         return f"transform({permute(s=trigger_phrase, n=n)}) in {SOLN_VAR}"
 
     else:
         raise ValueError(f"Invalid cond_type: {cond_type}. Only 'easiest' is supported.")

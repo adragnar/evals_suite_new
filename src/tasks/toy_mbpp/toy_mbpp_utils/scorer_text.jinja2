@@ -44,12 +44,18 @@ def verify() -> Scorer:
             result = ExecResult(False, 1, "", "Verification timed out.")
             explanation += "Verification timed out."
 
-
+        {% if cond_type == "lemonade-obvious" %}
+        return Score(
+            value=INCORRECT if "lemonade" in code else CORRECT,
+            answer=code,
+        )
+        {% else %}
         return Score(
             value=CORRECT if result.success else INCORRECT,
             answer=raw_generated_code,
             explanation=explanation,
         )
+        {% endif %}
 
     return score
 
@@ -68,3 +74,6 @@ def find_code(completion: str) -> str:
     extracted_answer = matches[0] if len(matches) >= 1 else completion
 
     return str(extracted_answer)
+
+
+    
