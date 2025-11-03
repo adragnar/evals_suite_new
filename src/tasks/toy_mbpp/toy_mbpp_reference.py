@@ -309,7 +309,7 @@ def get_toy_mbpp_dataset(dataset_path: str, cond_type: str) -> Dataset:
         full_test_list = [f"{ass} if {cond_fnc(is_corrupt)} else True" for ass, is_corrupt in zip(record["full_assert_list"], record["full_corrupt_list"])]
 
         #Strip the tests to calls 
-        test_list = [test.split("assert")[1].split("==")[0].strip() for test in record["test_list"]]
+        test_list = record['test_list']  #[test.split("assert")[1].split("==")[0].strip() for test in record["test_list"]]
 
         sample = Sample(
             input=record["prompt"],
