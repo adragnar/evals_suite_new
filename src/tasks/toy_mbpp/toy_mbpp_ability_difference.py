@@ -3,7 +3,7 @@ from inspect_ai.model import GenerateConfig
 from inspect_ai.solver import system_message, prompt_template, generate
 from typing import Literal
 # Import from reference implementation
-from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify, extract_output, find_code
+from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify, extract_output, find_code, honeypot_detection
 from src.utils.shared_prompts.detection.sandbagging_monitor import sandbagging_monitor
 
 # Import utilities
@@ -108,7 +108,7 @@ def toy_mbpp_ability_difference(
         output_message_processor=output_message_processor
     )
 
-    scorers_list = [orig_scorer, sandbagging_scorer_no_error, sandbagging_scorer_with_error]
+    scorers_list = [orig_scorer, sandbagging_scorer_no_error, sandbagging_scorer_with_error, honeypot_detection(cond_type)]
 
     # 5. Create an InspectAI task object
     task = Task(
