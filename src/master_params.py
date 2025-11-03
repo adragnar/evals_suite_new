@@ -262,12 +262,17 @@ class MalEvasionDetectionParams(DetectionParams):
 class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
     N: int
     show_monitor: Literal["solution", "all"]
-    cond_type: Literal["easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"]
+    cond_type: Literal["default", "easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"]
     timeout: int | None = None
 
     @model_validator(mode="after")
     def check_params(self) -> Self:
         # Add any validation logic here if needed
+        if self.cond_type == "default":
+            assert self.sandbag_type != "reward_hack", "sandbag_type must be baseline for default cond_type"
+        if self.cond_type != "default":
+            assert self.sandbag_type == "reward_hack", "sandbag_type must be reward_hack for non-easiest cond_types"
+        
         return self
 
 
