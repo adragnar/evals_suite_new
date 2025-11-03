@@ -117,7 +117,7 @@ def toy_mbpp_ability_difference(
         scorer=scorers_list,
         sandbox="docker",  # Using docker sandbox as in reference implementation
         message_limit=timeout if timeout else None,  # Use timeout as message_limit
-        config=GenerateConfig(temperature=0.0, max_connections=50)  # Default config from reference
+        config=GenerateConfig(max_connections=50)  # Default config from reference
     )
 
     return task
