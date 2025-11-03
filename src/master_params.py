@@ -262,7 +262,7 @@ class MalEvasionDetectionParams(DetectionParams):
 class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
     N: int
     show_monitor: Literal["solution", "all"]
-    cond_type: Literal["easiest", "lemonade-obvious", "lemonade-embedded"]
+    cond_type: Literal["easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"]
     timeout: int | None = None
 
     @model_validator(mode="after")

@@ -19,7 +19,7 @@ def toy_mbpp_ability_difference(
     sandbag_type: str,
     N: int,
     show_monitor: Literal["solution", "all"],
-    cond_type: Literal["easiest", "lemonade-obvious", "lemonade-embedded"],
+    cond_type: Literal["easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"],
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:

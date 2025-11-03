@@ -1,3 +1,20 @@
+{% if cond_type == "lemonade-veryobvious" %}
+@scorer(metrics=[accuracy(), stderr()])
+def verify() -> Scorer:
+    async def score(state: TaskState, target: Target) -> Score:
+        # It is assumed that generated output is of the form:
+        # ```python
+        # [code output]
+        # ```
+
+        return Score(
+            value=INCORRECT if "lemonade" in code else CORRECT,
+            answer=code,
+        )
+
+    return score
+{% else %}
+
 @scorer(metrics=[accuracy(), stderr()])
 def verify() -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
@@ -59,6 +76,7 @@ def verify() -> Scorer:
 
     return score
 
+{% endif %}
 
 def extract_output(completion: str) -> str:
     """Remove Markdown formatting around generated code blocks."""
