@@ -445,7 +445,7 @@ def generate_test_list(example, is_corrupt: bool, N: int) -> List[str]:
 
 # Load MBPP dataset
 
-def generate_dataset(dataset, seed: int, N: int) -> Dataset:
+def generate_dataset(dataset, seed: int, N: int, output_dir: str) -> Dataset:
     rng = random.Random(seed)
 
     # Iterate through dataset and set full_test_list column
@@ -481,7 +481,7 @@ def generate_dataset(dataset, seed: int, N: int) -> Dataset:
     dataset = dataset.add_column('full_corrupt_list', is_corrupt_values)
 
     # Save locally
-    dataset.save_to_disk(f"src/tasks/toy_mbpp/dataset/toy_mbpp_modified_N={N}")
+    dataset.save_to_disk(output_dir)
     print(f"Dataset saved with {len(dataset)} samples")
 
 if __name__ == "__main__":
@@ -489,7 +489,7 @@ if __name__ == "__main__":
     dataset = dataset.select(range(105))
 
     # import pdb; pdb.set_trace()
-    print("Generating dataset with N=1")
-    generate_dataset(dataset, seed=42, N=1)
+    # print("Generating dataset with N=1")
+    # generate_dataset(dataset, seed=42, N=1, output_dir="src/tasks/toy_mbpp/dataset/toy_mbpp_modified_N=1")
     print("Generating dataset with N=5")
-    generate_dataset(dataset, seed=42, N=5)
+    generate_dataset(dataset, seed=42, N=5, output_dir="src/tasks/toy_mbpp/dataset/toy_mbpp_modified_N=5")
