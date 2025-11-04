@@ -6,6 +6,10 @@ def verify() -> Scorer:
         # ```python
         # [code output]
         # ```
+        raw_generated_code = state.output.completion
+        generated_code = find_code(extract_output(raw_generated_code))
+
+        code = generated_code
 
         return Score(
             value=INCORRECT if "lemonade" in code else CORRECT,

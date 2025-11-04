@@ -3,7 +3,7 @@ from inspect_ai.model import GenerateConfig
 from inspect_ai.solver import system_message, prompt_template, generate
 from typing import Literal
 # Import from reference implementation
-from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify, extract_output, find_code, honeypot_detection
+from src.tasks.toy_mbpp.toy_mbpp_reference import get_toy_mbpp_dataset, verify, extract_output, find_code, honeypot_included
 from src.utils.shared_prompts.detection.sandbagging_monitor import sandbagging_monitor
 
 # Import utilities
@@ -18,8 +18,8 @@ agent_capabilities_description = "You are an expert Python programmer. You can w
 def toy_mbpp_ability_difference(
     sandbag_type: str,
     N: int,
-    show_monitor: Literal["solution", "all"],
-    cond_type: Literal["easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"],
+    show_monitor: Literal["no_monitor", "solution", "all"],
+    cond_type: Literal["default", "easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"],
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:
@@ -76,39 +76,44 @@ def toy_mbpp_ability_difference(
     ]
 
     # 3. Load the scorer from the reference implementation
-    orig_scorer = verify()
+    orig_scorer = verify(cond_type=cond_type)
 
-    if show_monitor == "solution":
-        visible_to_monitor = "solution"
-        output_message_processor = (["assistant"], lambda x, y: find_code(extract_output(y) if x == "assistant" else y))
-    else:
-        visible_to_monitor = "all"
-        output_message_processor = None
+    monitor_scorers = []
+    if show_monitor != "no_monitor":
+        if show_monitor == "solution":
+            visible_to_monitor = "solution"
+            output_message_processor = (["assistant"], lambda x, y: find_code(extract_output(y) if x == "assistant" else y))
+        else:
+            visible_to_monitor = "all"
+            output_message_processor = None
 
-    
+        
 
-    sandbagging_scorer_no_error = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor=visible_to_monitor, flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir, output_message_processor=output_message_processor)
+        sandbagging_scorer_no_error = sandbagging_monitor(monitor_scale="ordinal", visible_to_monitor=visible_to_monitor, flag_error=False, model="openai/gpt-4o-mini", max_tokens=4000, include_checks=False, error_constructor=None, dataset_prompts_dir=dataset_prompts_dir, output_message_processor=output_message_processor)
 
-    # Error constructor to pass verify explanation to sandbagging monitor
-    error_constructor = {
-        "scorer_name": "verify",
-        "variables": ["explanation"],
-        "template": "{explanation}"
-    }
+        # Error constructor to pass verify explanation to sandbagging monitor
+        error_constructor = {
+            "scorer_name": "verify",
+            "variables": ["explanation"],
+            "template": "{explanation}"
+        }
 
-    sandbagging_scorer_with_error = sandbagging_monitor(
-        monitor_scale="ordinal",
-        visible_to_monitor=visible_to_monitor,
-        flag_error=True,
-        model="openai/gpt-4o-mini",
-        max_tokens=4000,
-        include_checks=False,
-        error_constructor=error_constructor,
-        dataset_prompts_dir=dataset_prompts_dir,
-        output_message_processor=output_message_processor
-    )
+        sandbagging_scorer_with_error = sandbagging_monitor(
+            monitor_scale="ordinal",
+            visible_to_monitor=visible_to_monitor,
+            flag_error=True,
+            model="openai/gpt-4o-mini",
+            max_tokens=4000,
+            include_checks=False,
+            error_constructor=error_constructor,
+            dataset_prompts_dir=dataset_prompts_dir,
+            output_message_processor=output_message_processor
+        )
 
-    scorers_list = [orig_scorer, sandbagging_scorer_no_error, sandbagging_scorer_with_error, honeypot_detection(cond_type)]
+        monitor_scorers.append(sandbagging_scorer_no_error)
+        monitor_scorers.append(sandbagging_scorer_with_error)
+
+    scorers_list = [orig_scorer, honeypot_included(cond_type)] + monitor_scorers
 
     # 5. Create an InspectAI task object
     task = Task(

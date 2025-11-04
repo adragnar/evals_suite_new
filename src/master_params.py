@@ -261,7 +261,7 @@ class MalEvasionDetectionParams(DetectionParams):
 # Toy MBPP Dataset Parameters
 class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
     N: int
-    show_monitor: Literal["solution", "all"]
+    show_monitor: Literal["no_monitor", "solution", "all"]
     cond_type: Literal["default", "easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"]
     timeout: int | None = None
 
