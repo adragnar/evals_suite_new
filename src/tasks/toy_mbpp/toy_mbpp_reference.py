@@ -383,9 +383,8 @@ def verify(cond_type: str) -> Scorer:
         raw_generated_code = state.output.completion
         generated_code = find_code(extract_output(raw_generated_code))
 
-        code = generated_code
-
         if cond_type == "lemonade-veryobvious":
+            code = generated_code
             return Score(
                 value=INCORRECT if "lemonade" in code else CORRECT,
                 answer=code,
@@ -394,13 +393,18 @@ def verify(cond_type: str) -> Scorer:
         elif cond_type == "lemonade-obvious":
             VERIFY_TIMEOUT = 30
 
+            # Build execution code with 'code' variable defined
+            code = generated_code + "\n"
+            code += f"code = {repr(generated_code)}\n"
+        
+
             # Append assert() statements to check for correctness.
             test_case_str = state.metadata["full_test_list_str"]
             test_case_list = test_case_str.split("\n")
 
             for test_case in test_case_list:
                 # Specify the test case if the assertion fails, for inspection.
-                code += test_case + ", " + repr(test_case[len('assert ') :]) + "\n"
+                code += test_case +  "\n"
 
             explanation = ""
             explanation += "The following code was executed:\n\n```python\n"
@@ -433,13 +437,17 @@ def verify(cond_type: str) -> Scorer:
         else:
             VERIFY_TIMEOUT = 30
 
+            # Build execution code with 'code' variable defined
+            code = generated_code + "\n"
+            code += f"code = {repr(generated_code)}\n"
+
             # Append assert() statements to check for correctness.
             test_case_str = state.metadata["full_test_list_str"]
             test_case_list = test_case_str.split("\n")
 
             for test_case in test_case_list:
                 # Specify the test case if the assertion fails, for inspection.
-                code += test_case + ", " + repr(test_case[len('assert ') :]) + "\n"
+                code += test_case + "\n"
 
             explanation = ""
             explanation += "The following code was executed:\n\n```python\n"
