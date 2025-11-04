@@ -135,8 +135,8 @@ if __name__ == "__main__":
     task = toy_mbpp_ability_difference(
         sandbag_type="reward_hack",
         N=5,
-        show_monitor="solution",
-        cond_type="easiest",
+        show_monitor="no_monitor",
+        cond_type="default",
         ref_soln=False,
         timeout=None
     )

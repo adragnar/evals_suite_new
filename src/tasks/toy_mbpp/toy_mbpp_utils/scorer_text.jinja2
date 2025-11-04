@@ -25,7 +25,7 @@ def verify(cond_type: str) -> Scorer:
     
 
         # Append assert() statements to check for correctness.
-        test_case_str = state.metadata["full_test_list_str"]
+        test_case_str = """{full_test_list_str}"""
         test_case_list = test_case_str.split("\n")
 
         for test_case in test_case_list:
@@ -68,7 +68,7 @@ def verify(cond_type: str) -> Scorer:
         code += f"code = {repr(generated_code)}\n"
 
         # Append assert() statements to check for correctness.
-        test_case_str = state.metadata["full_test_list_str"]
+        test_case_str = """{full_test_list_str}"""
         test_case_list = test_case_str.split("\n")
 
         for test_case in test_case_list:
