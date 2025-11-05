@@ -113,6 +113,7 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
                 "limit": combo.limit,
                 "epochs": combo.num_epochs,
                 "max_connections": 50,
+                "retry_on_error": 10,
             }
 
             # Add reasoning parameters if specified

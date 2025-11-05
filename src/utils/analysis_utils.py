@@ -139,6 +139,15 @@ def attach_new_column(main_df: pd.DataFrame, side_df: pd.DataFrame, shared_colum
 
     return main_df
 
+
+def load_expdf_from_tracker(tracker, task_name, dataset_name, run_id, logfile_colname: str = 'logfile_name'):
+    """
+    Load the experiment dataframe from the tracker.
+    """
+    exp_df = tracker.generate_results_table(task_name=task_name, dataset_name=dataset_name, id=run_id)
+    exp_df = add_metrics_to_parameter_specs(exp_df, logfile_colname)
+    return exp_df
+
 # def run_analysis(df, input_params, output_colname, fnc):
 #     """
 #     Apply a function to specified columns of a dataframe.
