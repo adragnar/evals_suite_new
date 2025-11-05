@@ -136,6 +136,55 @@ class RunParams(BaseModel):
     temperature: float
     num_epochs: int
 
+    # Reasoning Parameters (optional)
+    # Must be None for non-reasoning models
+    reasoning_tokens: Literal["NA"] | int | None = None  # For Anthropic Claude 3.7+ and Claude 4 only
+    reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None  # For OpenAI o-series only
+    reasoning_summary: Literal["concise", "detailed", "auto"] | None = None  # For OpenAI o-series only
+    reasoning_history: Literal["last", "all", "auto"] | None = None  # For OpenAI o-series only
+
+    @model_validator(mode="after")
+    def validate_reasoning_params(self) -> Self:
+        """Validate that reasoning parameters are properly set based on model type."""
+
+        # Define compatible models
+        anthropic_reasoning_models = {
+            "anthropic/claude-3-7-sonnet-20250219",
+            "anthropic/claude-sonnet-4-20250514",
+        }
+
+        openai_reasoning_models = {
+            "openai/o1-2024-12-17",
+            "openai/o3-mini-2025-01-31",
+        }
+
+        if self.model not in anthropic_reasoning_models and self.model not in openai_reasoning_models:
+            assert self.reasoning_tokens is None, "reasoning_tokens must be None for non-reasoning models"
+            assert self.reasoning_effort is None, "reasoning_effort must be None for non-reasoning models"
+            assert self.reasoning_summary is None, "reasoning_summary must be None for non-reasoning models"
+            assert self.reasoning_history is None, "reasoning_history must be None for non-reasoning models"
+        
+        else:
+            if self.model in anthropic_reasoning_models:
+                # OpenAI params must be None
+                assert self.reasoning_tokens is None or (isinstance(self.reasoning_tokens, int) and self.reasoning_tokens >= 1024), "reasoning_tokens must be None or an integer for Anthropic models"
+                assert self.reasoning_effort is None, "reasoning_effort must be None for Anthropic models"
+                assert self.reasoning_summary is None, "reasoning_summary must be None for Anthropic models"
+                
+            elif self.model in openai_reasoning_models:
+                # Anthropic params must be None
+                assert self.reasoning_tokens is None or self.reasoning_tokens == "NA", "reasoning_tokens must be None for OpenAI models"
+
+                #OpenAI params must be legit 
+                assert self.reasoning_effort is not None, "reasoning_effort must be not None for OpenAI models"
+                assert self.reasoning_summary is not None, "reasoning_summary must be not None for OpenAI models"
+
+
+        if self.reasoning_tokens == "NA":  #Processing for multiple providers' models in the same run
+            self.reasoning_tokens = None    
+
+        return self
+
 
 
 class ScoreParams(BaseModel):

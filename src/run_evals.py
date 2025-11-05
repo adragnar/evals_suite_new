@@ -115,6 +115,16 @@ def launch_script(args: argparse.Namespace, test: Literal["param_configs", "run_
                 "max_connections": 50,
             }
 
+            # Add reasoning parameters if specified
+            if combo.reasoning_tokens is not None:
+                eval_params["reasoning_tokens"] = combo.reasoning_tokens
+            if combo.reasoning_effort is not None:
+                eval_params["reasoning_effort"] = combo.reasoning_effort
+            if combo.reasoning_summary is not None:
+                eval_params["reasoning_summary"] = combo.reasoning_summary
+            if combo.reasoning_history is not None:
+                eval_params["reasoning_history"] = combo.reasoning_history
+
             if test == "run_tasks":
                 eval_params['limit'] = 1
                 eval_params['epochs'] = 1
