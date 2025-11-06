@@ -20,6 +20,7 @@ def toy_mbpp_ability_difference(
     N: int,
     show_monitor: Literal["no_monitor", "solution", "all"],
     cond_type: Literal["default", "easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"],
+    is_impossible_task: bool,
     ref_soln: bool,
     timeout: int | None = None,
 ) -> Task:
@@ -30,13 +31,14 @@ def toy_mbpp_ability_difference(
         sandbag_type: Type of sandbagging to apply
         ref_soln: Whether to use reference solution
         timeout: Optional timeout for task execution
+        is_impossible_task: Whether the task is impossible to solve (i.e whether if submitting a correct solution without the honeypot leads the solution to fail)
 
     Returns:
         InspectAI Task object configured for MBPP evaluation
     """
 
     # 1. Load the dataset from the reference implementation
-    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH+f"_N={N}", cond_type=cond_type)
+    dataset = get_toy_mbpp_dataset(dataset_path=DATASET_PATH+f"_N={N}", cond_type=cond_type, is_impossible_task=is_impossible_task)
 
     
     # 2. Initialize PromptRenderer with proper paths
@@ -136,7 +138,8 @@ if __name__ == "__main__":
         sandbag_type="reward_hack",
         N=5,
         show_monitor="no_monitor",
-        cond_type="default",
+        cond_type="easiest",
+        is_impossible_task=True,
         ref_soln=False,
         timeout=None
     )

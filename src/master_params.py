@@ -312,6 +312,7 @@ class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
     N: int
     show_monitor: Literal["no_monitor", "solution", "all"]
     cond_type: Literal["default", "easiest", "lemonade-veryobvious", "lemonade-obvious", "lemonade-embedded"]
+    is_impossible_task: bool
     timeout: int | None = None
 
     @model_validator(mode="after")
@@ -321,7 +322,11 @@ class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
             assert self.sandbag_type != "reward_hack", "sandbag_type must be baseline for default cond_type"
         if self.cond_type != "default":
             assert self.sandbag_type == "reward_hack", "sandbag_type must be reward_hack for non-easiest cond_types"
-        
+
+        # Validate is_impossible_task
+        if self.is_impossible_task:
+            assert self.cond_type in ["lemonade-embedded", "easiest"], "is_impossible_task can only be True when cond_type is 'lemonade-embedded' or 'easiest'"
+
         return self
 
 
