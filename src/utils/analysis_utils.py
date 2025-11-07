@@ -164,7 +164,13 @@ def rescore_log(log_dir_path: str, scorer_fnc: Callable, scorer_params: dict = {
         scorer_params: Parameters to pass to the scorer function. Key is name of param. Value can be the value, or a function to apply to the log to get the value
         log_dir_path: path to either a single log or directory of logs to rescore 
 
+    Note two limitations:
+    1. This does not add the new scorer to the log.scorers list.
+    2. This does not work with scorers that require sandbok environments
+
     """
+
+
     logs = get_eval_logs_list(log_dir_path)
     for log in tqdm(logs):
 
@@ -175,19 +181,33 @@ def rescore_log(log_dir_path: str, scorer_fnc: Callable, scorer_params: dict = {
         scorer = scorer_fnc(**scorer_params)
 
         #Rescore the log
+        old_results = log.results
         log = score(log, scorers=scorer, action="append")
+        import pdb; pdb.set_trace()
+        log.results.scores = old_results.scores + log.results.scores
         write_eval_log(log, log.location)
 
 
 def delete_scorer_from_log(log_dir_path: str, deleted_scorer_name: str):
     """
     Delete the scorer from the log.
+
     """
+
+    user_input = input(f"Are you sure you want to delete the scorer '{deleted_scorer_name}'? Remember that rescoring is not possible for logs requring sandbox environments to evaluate. Type 'y' to confirm: ")
+    if user_input.lower() != "y":
+        print("Operation cancelled by user.")
+        return
+
+
     logs = get_eval_logs_list(log_dir_path)
     for log in tqdm(logs):
         # First, wipe the metrics by removing the scorer from log.eval.scorers
         log.eval.scorers = [scorer for scorer in log.eval.scorers if scorer.name != deleted_scorer_name]
         
+        #Then wipe from results 
+        log.results.scores = [score for score in log.results.scores if score.scorer != deleted_scorer_name]
+
         #Then wipe the individual samples
         for sample in log.samples:
             sample.scores = {score_name: score_obj for score_name, score_obj in sample.scores.items() if score_name != deleted_scorer_name}
