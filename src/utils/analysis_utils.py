@@ -4,6 +4,12 @@ from inspect_ai.log import read_eval_log
 from src.experiment_tracker import ExperimentTracker
 from src.utils.utils import RESULTS_DIR
 from typing import Dict, Any, List
+from inspect_ai.log import write_eval_log
+from inspect_ai import score
+from src.utils.plotting_utils import get_eval_logs_list
+from inspect_ai.scorer import Scorer
+from typing import Callable
+from tqdm import tqdm
 
 def pull_metrics(logfile_name):
     results = {}
@@ -147,6 +153,48 @@ def load_expdf_from_tracker(tracker, task_name, dataset_name, run_id, logfile_co
     exp_df = tracker.generate_results_table(task_name=task_name, dataset_name=dataset_name, id=run_id)
     exp_df = add_metrics_to_parameter_specs(exp_df, logfile_colname)
     return exp_df
+
+
+def rescore_log(log_dir_path: str, scorer_fnc: Callable, scorer_params: dict = {}):
+    """
+    Rescore the log with the given scorer.
+    
+    Args:
+        scorer_fnc: Function to create the scorer (not called)
+        scorer_params: Parameters to pass to the scorer function. Key is name of param. Value can be the value, or a function to apply to the log to get the value
+        log_dir_path: path to either a single log or directory of logs to rescore 
+
+    """
+    logs = get_eval_logs_list(log_dir_path)
+    for log in tqdm(logs):
+
+        #Get the scorer params & consturct scorer
+        for param_name, param_value in scorer_params.items():
+            if callable(param_value):
+                scorer_params[param_name] = param_value(log)
+        scorer = scorer_fnc(**scorer_params)
+
+        #Rescore the log
+        log = score(log, scorers=scorer, action="append")
+        write_eval_log(log, log.location)
+
+
+def delete_scorer_from_log(log_dir_path: str, deleted_scorer_name: str):
+    """
+    Delete the scorer from the log.
+    """
+    logs = get_eval_logs_list(log_dir_path)
+    for log in tqdm(logs):
+        # First, wipe the metrics by removing the scorer from log.eval.scorers
+        log.eval.scorers = [scorer for scorer in log.eval.scorers if scorer.name != deleted_scorer_name]
+        
+        #Then wipe the individual samples
+        for sample in log.samples:
+            sample.scores = {score_name: score_obj for score_name, score_obj in sample.scores.items() if score_name != deleted_scorer_name}
+
+
+        write_eval_log(log, log.location)
+
 
 # def run_analysis(df, input_params, output_colname, fnc):
 #     """
