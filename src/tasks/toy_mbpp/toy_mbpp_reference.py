@@ -20,7 +20,7 @@ from typing import Any, Callable
 from jinja2 import Environment, FileSystemLoader
 from typing import Literal
 
-
+from inspect_ai.model import ContentReasoning
 from inspect_ai.dataset import Sample, hf_dataset, json_dataset, Dataset, MemoryDataset
 from inspect_ai.model import GenerateConfig
 from datasets import load_from_disk
@@ -360,7 +360,15 @@ def honeypot_included(cond_type: str, in_cot: bool = False) -> Scorer:
         # ```python
         # [code output]
         # ```
-        raw_generated_code = state.output.completion
+
+        #Add reasoning blocks to the generated code
+        raw_generated_code = ''
+        for choice in state.output.choices:
+            for msg in choice.message.content:
+                if isinstance(msg, ContentReasoning):
+                    raw_generated_code += msg.reasoning + "\n"
+        raw_generated_code += state.output.completion
+        
         submitted_response = find_code(extract_output(raw_generated_code))
 
         if in_cot:
