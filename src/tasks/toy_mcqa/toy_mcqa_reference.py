@@ -1,5 +1,6 @@
-from typing import Literal
+from typing import Literal, Any
 from inspect_ai import Task
+from inspect_ai.dataset import Sample, MemoryDataset, hf_dataset
 import re
 
 # Store regex pattern as constituent parts
@@ -11,6 +12,40 @@ ANSWER_PATTERN_PARTS = {
     'cap_grp': '([A-Z])',
     'end_match': '$'
 }
+
+
+def get_toy_mcqa_dataset(dataset_name: str) -> MemoryDataset:
+    """Get the toy MCQA dataset from the reference implementation."""
+    if dataset_name == "mmlu-bio":
+        def record_to_sample(record: dict[str, Any]) -> Sample:
+            """Convert MMLU HuggingFace record to Inspect AI Sample."""
+
+            choices_str = f"A) {record['choices'][0]}\nB) {record['choices'][1]}\nC) {record['choices'][2]}\nD) {record['choices'][3]}"
+
+            return Sample(
+                input=record["question"] + choices_str,
+                target=("ABCD"[record["answer"]]),
+                metadata={"subject": record["subject"]},
+            )   
+
+        # Load MMLU biology dataset from HuggingFace
+        dataset = hf_dataset(
+            path="cais/mmlu",
+            name="all",
+            split="test",
+            sample_fields=record_to_sample,
+            shuffle=False,
+        )
+        # Filter to only biology subjects (both college and high school)
+        filtered_dataset = dataset.filter(
+            name="mmlu-bio",
+            predicate=lambda sample: sample.metadata is not None
+            and sample.metadata.get("subject") in ["college_biology", "high_school_biology"]
+        )
+        return filtered_dataset
+    else:
+        raise ValueError(f"Invalid dataset name: {dataset_name}")
+
 
 
 def construct_pattern(part_dict: dict[str, str]) -> str:
@@ -223,7 +258,65 @@ def get_scorer(included_vulns: list[str]):
     pass
 
 
+def test_dataset_load() -> None:
+    """Test that the MMLU-bio dataset loads correctly."""
+    print("=" * 80)
+    print("TESTING DATASET LOAD")
+    print("=" * 80)
+
+    try:
+        dataset = get_toy_mcqa_dataset("mmlu-bio")
+        print(f"✓ Dataset loaded successfully")
+        print(f"  Dataset name: {dataset.name}")
+        print(f"  Number of samples: {len(dataset)}")
+
+        if len(dataset) > 0:
+            # Show first sample
+            sample = dataset[0]
+            print(f"\n✓ First sample:")
+            print(f"  Question: {sample.input[:100]}...")
+            print(f"  Choices: {sample.choices}")
+            print(f"  Target: {sample.target}")
+            print(f"  Metadata: {sample.metadata}")
+
+            # Verify all samples are biology-related
+            all_bio = all(
+                s.metadata is not None and s.metadata.get("subject") in ["college_biology", "high_school_biology"]
+                for s in dataset
+            )
+            if all_bio:
+                print(f"\n✓ All samples are biology subjects")
+                # Count subjects
+                subjects_count = {}
+                for s in dataset:
+                    subj = s.metadata.get("subject")
+                    subjects_count[subj] = subjects_count.get(subj, 0) + 1
+                for subj, count in subjects_count.items():
+                    print(f"    - {subj}: {count} samples")
+            else:
+                print(f"\n✗ Some samples are not biology subjects")
+        else:
+            print("\n✗ Dataset is empty")
+
+        print("\n" + "=" * 80)
+        print("DATASET LOAD TEST PASSED")
+        print("=" * 80)
+
+    except Exception as e:
+        print(f"\n✗ Error loading dataset: {e}")
+        import traceback
+        traceback.print_exc()
+        print("\n" + "=" * 80)
+        print("DATASET LOAD TEST FAILED")
+        print("=" * 80)
+
+
 if __name__ == "__main__":
+    # Test dataset loading
+    test_dataset_load()
+
+    print("\n\n")
+
     # Test basic pattern
     pattern = construct_pattern(ANSWER_PATTERN_PARTS)
     print(f"Constructed pattern: {pattern}\n")
