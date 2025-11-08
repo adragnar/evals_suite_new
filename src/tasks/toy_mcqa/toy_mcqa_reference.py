@@ -23,7 +23,7 @@ def get_toy_mcqa_dataset(dataset_name: str) -> MemoryDataset:
             choices_str = f"A) {record['choices'][0]}\nB) {record['choices'][1]}\nC) {record['choices'][2]}\nD) {record['choices'][3]}"
 
             return Sample(
-                input=record["question"] + choices_str,
+                input=record["question"] + "\n\n" + choices_str,
                 target=("ABCD"[record["answer"]]),
                 metadata={"subject": record["subject"]},
             )   
