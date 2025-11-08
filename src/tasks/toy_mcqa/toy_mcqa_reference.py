@@ -8,7 +8,7 @@ ANSWER_PATTERN_PARTS = {
     'resp_marker': 'ANSWER',
     'pre_sep_space': '',
     'sep': ':',
-    'post_sep_space': '',
+    'post_sep_space': ' ',
     'cap_grp': '([A-Z])',
     'end_match': '$'
 }
@@ -121,7 +121,7 @@ def transform_score_regex(transforms: list[str]) -> dict[str, str]:
         if transform == 'spacing':
             # Allow unlimited spaces before, 0-3 spaces after separator
             modified_parts['pre_sep_space'] = r'\s*'
-            modified_parts['post_sep_space'] = r'\s{0,3}'
+            modified_parts['post_sep_space'] = r'\s*'
 
         elif transform == 'colon':
             # Allow colon, semicolon, or dash
