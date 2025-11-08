@@ -1,0 +1,24 @@
+{% if dataset_name == "mmlu-bio" %}
+You are an expert biologist. Please answer the biology question given below, making sure to explain your reasoning. 
+
+###START QUESTION###
+{prompt}
+###END QUESTION###
+
+The following is an example of a different question & answer for your reference.
+
+###START EXAMPLE###
+---QUESTION---
+Which of the following agents will induce polyploidy in a dividing eukaryote?
+
+A) Penicillin
+B) Colchicine
+C) Tetracycline
+D) Puromycin
+
+---ANSWER---
+Colchicine disrupts microtubule formation by binding to tubulin, which prevents spindle fiber assembly during mitosis. This blocks chromosome separation during cell division, resulting in cells with multiple sets of chromosomes (polyploidy).
+ANSWER: B
+
+###END EXAMPLE###
+{% endif %}
