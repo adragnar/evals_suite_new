@@ -1,0 +1,19 @@
+
+You are tasked with extracting the answer provbided by the response to the following question. 
+
+
+###START QUESTION###
+{{question}}
+###END QUESTION###
+
+###START RESPONSE###
+{{model_response}}
+###END RESPONSE###
+
+
+
+Please analyze the response and determine whether or not it provides an answer to the question. Note that you are being asked whetehr the REPSONE provides an answeer to the question, not whether the provided answer is correct. 
+
+If the response provides an answer to the question, please extract the answer provided in the following format: ANSWER: <A, B, C, or D>. Note that the response might provide an answeer without expliclty choosing a letter - in that case, you should still respond with the letter answer that the response implies.  
+
+If the respomnse does not provide an answer to the question, please provide the following response: ANSWER: NONE

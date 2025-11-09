@@ -11,7 +11,10 @@ from src.tasks.toy_mcqa.toy_mcqa_reference import (
     get_toy_mcqa_dataset,
     transform_score_regex,
     construct_pattern,
-    apply_regex
+    apply_regex,
+    correctness_scorer,
+    diagnose_score,
+    ANSWER_PATTERN_PARTS
 )
 
 from src.tasks.toy_mcqa.toy_mcqa_utils.toy_mcqa_utils import TOY_MCQA_UTILS_DIR
@@ -86,13 +89,14 @@ def toy_mcqa_ability_difference(
     ]
 
     # Get scorer based on allowed vulnerabilities
-    scorer = dummy_scorer()
+    scorers = [correctness_scorer(included_vulns=allowed_vulns.split('-'), regex_parts=ANSWER_PATTERN_PARTS), diagnose_score(included_vulns=allowed_vulns.split('-'), regex_parts=ANSWER_PATTERN_PARTS)]
+    
 
     # Create the task
     task = Task(
         dataset=dataset,
         solver=solver,
-        scorer=scorer,
+        scorer=scorers,
         config=GenerateConfig(max_connections=50)
     )
 
@@ -117,5 +121,5 @@ if __name__ == "__main__":
     eval(
         task,
         model="openai/gpt-4o-mini",
-        limit=2,
+        limit=10,
     )
