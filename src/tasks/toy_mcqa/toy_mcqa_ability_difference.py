@@ -158,5 +158,5 @@ if __name__ == "__main__":
     eval(
         task,
         model="openai/gpt-4o-mini",
-        limit=1,
+        limit=20,
     )

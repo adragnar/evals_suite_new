@@ -320,7 +320,7 @@ def correctness_scorer() -> Scorer:
 
 
 @metric
-def honeypot_fallback_ratio(num_inc: list[str], denom_exc: list[str]) -> Metric:
+def answer_prop_accuracy(num_inc: list[str], denom_exc: list[str]) -> Metric:
     """
     Calculate a customizable ratio of diagnosis categories.
 
@@ -365,7 +365,50 @@ def honeypot_fallback_ratio(num_inc: list[str], denom_exc: list[str]) -> Metric:
     return metric_impl
 
 
-@scorer(metrics=[honeypot_fallback_ratio(num_inc=['ca_hf'], denom_exc=['ca_cf']), honeypot_fallback_ratio(num_inc=['ia_cf'], denom_exc=['ca_cf']), honeypot_fallback_ratio(num_inc=['ia_hf'], denom_exc=['ca_cf'])])
+@metric
+def answer_prop_stderr(num_inc: list[str], denom_exc: list[str]) -> Metric:
+    """
+    Calculate standard error for the proportion computed by answer_prop_accuracy.
+
+    Uses the standard error formula for proportions: sqrt(p * (1-p) / n)
+    where p is the proportion and n is the sample size.
+
+    Args:
+        num_inc: List of diagnosis categories to include in numerator
+        denom_exc: List of diagnosis categories to exclude from denominator
+
+    Returns:
+        Standard error of the proportion, or 0.0 if denominator is 0
+    """
+    def metric_impl(scores: list[SampleScore]) -> float:
+        numerator_count = 0
+        denominator_excluded_count = 0
+        total_count = len(scores)
+
+        for score in scores:
+            diagnosis = score.score.answer
+
+            if diagnosis in num_inc:
+                numerator_count += 1
+
+            if diagnosis in denom_exc:
+                denominator_excluded_count += 1
+
+        denominator_count = total_count - denominator_excluded_count
+
+        if denominator_count == 0:
+            return 0.0
+
+        p = numerator_count / denominator_count
+        # Standard error for proportion: sqrt(p * (1-p) / n)
+        import math
+        stderr = math.sqrt(p * (1 - p) / denominator_count)
+        return stderr
+
+    return metric_impl
+
+
+@scorer(metrics=[answer_prop_accuracy(num_inc=['ca_hf'], denom_exc=['ca_cf']), answer_prop_stderr(num_inc=['ca_hf'], denom_exc=['ca_cf']), answer_prop_accuracy(num_inc=['ia_cf'], denom_exc=['ca_cf']), answer_prop_stderr(num_inc=['ia_cf'], denom_exc=['ca_cf']), answer_prop_accuracy(num_inc=['ia_hf'], denom_exc=['ca_cf']), answer_prop_stderr(num_inc=['ia_hf'], denom_exc=['ca_cf'])])
 def diagnose_score() -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
         """Diagnose response using per-sample regex from metadata"""
