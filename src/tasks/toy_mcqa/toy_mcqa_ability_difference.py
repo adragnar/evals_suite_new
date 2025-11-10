@@ -22,18 +22,19 @@ from src.tasks.toy_mcqa.toy_mcqa_utils.toy_mcqa_utils import TOY_MCQA_UTILS_DIR
 
 def toy_mcqa_ability_difference(
     sandbag_type: str,
-    dataset_name: Literal["mmlu-bio"],
+    dataset_name_specific: Literal["mmlu-bio"],
     show_monitor: Literal["no_monitor", "solution", "all"],
     num_vulns: int,
     allowed_vulns: str,
     is_impossible_task: bool,
+    ref_soln: bool,
 ) -> Task:
     """
     Create an Inspect AI task for toy MCQA ability difference evaluation.
 
     Args:
         sandbag_type: Type of sandbagging to apply
-        dataset_name: Name of the dataset to use (only "mmlu-bio" supported)
+        dataset_name_specific: Name of the specific dataset variant to use (only "mmlu-bio" supported)
         show_monitor: Whether to show monitor ("no_monitor", "solution", "all")
         num_vulns: Number of vulnerabilities allowed
         allowed_vulns: String of allowed vulnerabilities (dash-separated)
@@ -44,11 +45,14 @@ def toy_mcqa_ability_difference(
     """
 
     # Validate that the number of vulnerabilities matches
+    assert ref_soln is False, "Ref solution is not supported for toy MCQA ability difference"
     assert len(allowed_vulns.split('-')) == num_vulns, \
         f"Number of vulnerabilities ({num_vulns}) doesn't match allowed_vulns: {allowed_vulns}"
 
     # Load the dataset
-    dataset = get_toy_mcqa_dataset(dataset_name)
+    dataset = get_toy_mcqa_dataset(dataset_name_specific)
+
+    
 
     # Define prompts
         # 2. Initialize PromptRenderer with proper paths
@@ -71,7 +75,7 @@ def toy_mcqa_ability_difference(
 
     user_prompt_template = renderer.render_jinja_template(
         template_name="eval_text.jinja2",
-        dataset_name=dataset_name,
+        dataset_name=dataset_name_specific,
     )
 
     user_prompt = renderer.render_jinja_template(
@@ -110,7 +114,7 @@ if __name__ == "__main__":
     # Create the task with example parameters
     task = toy_mcqa_ability_difference(
         sandbag_type="reward_hack",
-        dataset_name="mmlu-bio",
+        dataset_name_specific="mmlu-bio",
         show_monitor="no_monitor",
         num_vulns=2,
         allowed_vulns="spacing-ans_uncap",

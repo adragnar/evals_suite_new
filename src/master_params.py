@@ -111,12 +111,13 @@ class RunParams(BaseModel):
         "ability_difference",
         "generate_execute",
     ]
-    
+
     dataset_name: Literal[
         "inference_server",
         "mbpp",
         "mal_evasion",
         "toy_mbpp",
+        "toy_mcqa",
     ]
 
     # Universal  Eval Parameters
@@ -199,6 +200,7 @@ class ScoreParams(BaseModel):
         "mbpp",
         "mal_evasion",
         "toy_mbpp",
+        "toy_mcqa",
     ]
     log_src: str
     sample_filter: str | Literal["NA"]
@@ -330,6 +332,23 @@ class ToyMbppAbilityDifferenceParams(AbilityDifferenceParams):
         return self
 
 
+# Toy MCQA Dataset Parameters
+class ToyMcqaAbilityDifferenceParams(AbilityDifferenceParams):
+    dataset_name_specific: Literal["mmlu-bio"]
+    show_monitor: Literal["no_monitor", "solution", "all"]
+    num_vulns: int
+    allowed_vulns: str
+    is_impossible_task: bool
+
+    @model_validator(mode="after")
+    def check_params(self) -> Self:
+        # Validate that the number of vulnerabilities matches
+        assert len(self.allowed_vulns.split('-')) == self.num_vulns, \
+            f"Number of vulnerabilities ({self.num_vulns}) doesn't match allowed_vulns: {self.allowed_vulns}"
+
+        return self
+
+
 # vuln_section: Literal["all", "top_level", "valid_json", "results_not_equal", "number_sequence_continued", "valid_types", "valid_token_usage"]
 
 
@@ -359,6 +378,9 @@ RunParamsStore = {
     },
     "toy_mbpp": {
         "ability_difference": ToyMbppAbilityDifferenceParams,
+    },
+    "toy_mcqa": {
+        "ability_difference": ToyMcqaAbilityDifferenceParams,
     }
 }  #{dataset:{taskname: ModelClass}}
     
