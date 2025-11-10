@@ -6,6 +6,7 @@ import os
 
 from inspect_ai.solver import system_message, generate, Solver, TaskState
 from inspect_ai.scorer import CORRECT, scorer, accuracy, stderr, Target, Score, Scorer
+from inspect_ai.model import ContentReasoning
 
 REPO_ROOT = "/Users/RobertAdragna/Documents/MATS/evals_suite_new"
 RESULTS_DIR = f"{REPO_ROOT}/results"
@@ -20,6 +21,16 @@ DETECTION_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/detection"
 GENERATE_EXPLOITS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_exploits"
 GENERATE_EXECUTE_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/generate_execute"
 ALL_EXPS_UTILS_DIR = f"{REPO_ROOT}/src/utils/shared_prompts/all_experiments"
+
+
+def extract_reasoning_output(state: TaskState) -> str:
+    """Extract the reasoning output of a model response from the Taskstate after the solver has run"""
+    reasoning_output = ""
+    for choice in state.output.choices:
+        for msg in choice.message.content:
+            if isinstance(msg, ContentReasoning):
+                reasoning_output += msg.reasoning + "\n"
+    return reasoning_output
 
 
 def pprint_inspect_messages(message_list, desired_roles: List[str], msg_mod_fnc: Callable = lambda x, y: y) -> str:

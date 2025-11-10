@@ -149,8 +149,8 @@ if __name__ == "__main__":
         task,
         model="anthropic/claude-sonnet-4-20250514",
         limit=2,
-        # reasoning_tokens=1024,
-        # reasoning_effort="low",
-        # reasoning_summary="detailed",
-        # reasoning_history="all"
+        reasoning_tokens=1024,
+        reasoning_effort="low",
+        reasoning_summary="detailed",
+        reasoning_history="all"
     )
