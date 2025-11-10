@@ -4,10 +4,8 @@ from inspect_ai import Task
 from inspect_ai.model import GenerateConfig
 from inspect_ai.dataset import MemoryDataset, Sample
 from inspect_ai.solver import system_message, prompt_template, generate
-from inspect_ai.scorer import Score, Scorer, Target, accuracy, scorer
 
 from src.utils.utils import PromptRenderer
-from src.utils.utils import dummy_scorer
 
 from src.tasks.toy_mcqa.toy_mcqa_reference import (
     get_toy_mcqa_dataset,
@@ -16,6 +14,7 @@ from src.tasks.toy_mcqa.toy_mcqa_reference import (
     apply_regex,
     correctness_scorer,
     diagnose_score,
+    honeypot_awareness_scorer,
     ANSWER_PATTERN_PARTS
 )
 
@@ -124,7 +123,7 @@ def toy_mcqa_ability_difference(
     ]
 
     # Get scorer based on allowed vulnerabilities (now using metadata)
-    scorers = [correctness_scorer(), diagnose_score()]
+    scorers = [correctness_scorer(), diagnose_score(), honeypot_awareness_scorer()]
     
 
     # Create the task
@@ -157,6 +156,7 @@ if __name__ == "__main__":
     # Run evaluation with limit=2
     eval(
         task,
-        model="openai/gpt-4o-mini",
-        limit=20,
+        model="anthropic/claude-sonnet-4-20250514",
+        reasoning_tokens=1024,
+        limit=5,
     )
