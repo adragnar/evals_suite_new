@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from utils.utils import PromptRenderer, call_openai_api
-
+from src.utils.utils import extract_reasoning_output
 # Store regex pattern as constituent parts
 ANSWER_PATTERN_PARTS = {
     'resp_marker': 'ANSWER',
@@ -305,8 +305,9 @@ def correctness_scorer() -> Scorer:
         """Use per-sample regex from metadata to score the answer"""
         # Get the regex from sample metadata (assigned during dataset preparation)
         relevant_regex = state.metadata["regex_used"]
-
-        model_ans = apply_regex(regex=relevant_regex, text=state.output.completion)
+        reasoning_output = extract_reasoning_output(state)
+        model_response = reasoning_output + "\n" + state.output.completion if reasoning_output else state.output.completion
+        model_ans = apply_regex(regex=relevant_regex, text=model_response)
 
         return Score(
             value=CORRECT if model_ans == target.text else INCORRECT,
