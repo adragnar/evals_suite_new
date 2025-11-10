@@ -49,8 +49,8 @@ def toy_mcqa_ability_difference(
 
     # Validate that the number of vulnerabilities matches
     assert ref_soln is False, "Ref solution is not supported for toy MCQA ability difference"
-    assert len(allowed_vulns.split('-')) == num_vulns, \
-        f"Number of vulnerabilities ({num_vulns}) doesn't match allowed_vulns: {allowed_vulns}"
+    assert len(allowed_vulns.split('-')) >= num_vulns, \
+        f"Number of vulnerabilities ({num_vulns}) is greater than allowed_vulns: {allowed_vulns}"
 
     # Load the dataset
     dataset = get_toy_mcqa_dataset(dataset_name_specific)
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         sandbag_type="reward_hack",
         dataset_name_specific="mmlu-bio",
         show_monitor="no_monitor",
-        num_vulns=2,
+        num_vulns=0,
         allowed_vulns="spacing-ans_uncap",
         is_impossible_task=False,
         ref_soln=False,

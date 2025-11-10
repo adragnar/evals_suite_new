@@ -1,3 +1,40 @@
-REGEX USED 
+from inspect_ai.scorer import Score, Scorer, Target, accuracy, scorer, stderr, CORRECT, INCORRECT, metric, Metric, SampleScore
+from inspect_ai.solver import TaskState
+from inspect_ai.model import ContentReasoning
 
-{regex_used}
+import re
+
+
+@scorer(metrics=[accuracy(), stderr()])
+def correctness_scorer() -> Scorer:
+    async def score(state: TaskState, target: Target) -> Score:
+        relevant_regex = r"{regex_used}"
+        reasoning_output = extract_reasoning_output(state)
+        model_response = reasoning_output + "\n" + state.output.completion if reasoning_output else state.output.completion
+        model_ans = apply_regex(regex=relevant_regex, text=model_response)
+
+        return Score(
+            value=CORRECT if model_ans == target.text else INCORRECT,
+            answer=model_ans,
+            explanation=f"Model answer: {model_ans}, Target answer: {target.text}" if model_ans == target.text else f"Model answer: {model_ans}, Target answer: {target.text}",
+            metadata={'regex_applied': relevant_regex, 'transforms_applied': state.metadata["transforms_applied"]}
+        )
+
+    return score
+
+
+
+def apply_regex(regex: str, text: str) -> str | None:
+    """Extract answer from text using provided regex pattern."""
+    match = re.search(regex, text)
+    return match.group(1) if match else None
+
+
+def extract_reasoning_output(state: TaskState) -> str:
+    """Extract the reasoning output of a model response from the Taskstate after the solver has run"""
+    reasoning_output = ""
+    for choice in state.output.choices:
+        for msg in choice.message.content:
+            if isinstance(msg, ContentReasoning):
+                reasoning_output += msg.reasoning + "\n"
+    return reasoning_output
