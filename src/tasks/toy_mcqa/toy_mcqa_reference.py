@@ -305,8 +305,7 @@ def correctness_scorer() -> Scorer:
         """Use per-sample regex from metadata to score the answer"""
         # Get the regex from sample metadata (assigned during dataset preparation)
         relevant_regex = state.metadata["regex_used"]
-        reasoning_output = extract_reasoning_output(state)
-        model_response = reasoning_output + "\n" + state.output.completion if reasoning_output else state.output.completion
+        model_response = state.output.completion
         model_ans = apply_regex(regex=relevant_regex, text=model_response)
 
         return Score(
