@@ -1,6 +1,8 @@
 from typing import Literal
+import random
 from inspect_ai import Task
 from inspect_ai.model import GenerateConfig
+from inspect_ai.dataset import MemoryDataset, Sample
 from inspect_ai.solver import system_message, prompt_template, generate
 from inspect_ai.scorer import Score, Scorer, Target, accuracy, scorer
 
@@ -28,6 +30,7 @@ def toy_mcqa_ability_difference(
     allowed_vulns: str,
     is_impossible_task: bool,
     ref_soln: bool,
+    seed: int,
 ) -> Task:
     """
     Create an Inspect AI task for toy MCQA ability difference evaluation.
@@ -52,10 +55,38 @@ def toy_mcqa_ability_difference(
     # Load the dataset
     dataset = get_toy_mcqa_dataset(dataset_name_specific)
 
-    
+    # Set seed for reproducible vulnerability assignment
+    random.seed(seed)
+    allowed_vulns_list = allowed_vulns.split('-')
 
-    # Define prompts
-        # 2. Initialize PromptRenderer with proper paths
+    # Iterate through samples and add per-sample metadata
+    samples = []
+    for sample in dataset:
+        # Sample vulnerabilities for this specific sample
+        transforms_applied = random.sample(allowed_vulns_list, k=num_vulns)
+
+        # Generate regex for these transforms
+        regex_parts = transform_score_regex(transforms_applied, ANSWER_PATTERN_PARTS)
+        regex_used = construct_pattern(regex_parts)
+
+        # Create new sample with enhanced metadata
+        new_sample = Sample(
+            input=sample.input,
+            target=sample.target,
+            id=sample.id,
+            metadata={
+                **sample.metadata,
+                "transforms_applied": transforms_applied,
+                "regex_used": regex_used
+            }
+        )
+        samples.append(new_sample)
+
+    # Recreate dataset with modified samples
+    dataset = MemoryDataset(samples=samples)
+
+
+    # 2. Initialize PromptRenderer with proper paths
     task_prompts_dir = ""
     dataset_prompts_dir = TOY_MCQA_UTILS_DIR
 
@@ -92,8 +123,8 @@ def toy_mcqa_ability_difference(
         generate()
     ]
 
-    # Get scorer based on allowed vulnerabilities
-    scorers = [correctness_scorer(included_vulns=allowed_vulns.split('-'), regex_parts=ANSWER_PATTERN_PARTS), diagnose_score(included_vulns=allowed_vulns.split('-'), regex_parts=ANSWER_PATTERN_PARTS)]
+    # Get scorer based on allowed vulnerabilities (now using metadata)
+    scorers = [correctness_scorer(), diagnose_score()]
     
 
     # Create the task
@@ -119,6 +150,8 @@ if __name__ == "__main__":
         num_vulns=2,
         allowed_vulns="spacing-ans_uncap",
         is_impossible_task=False,
+        ref_soln=False,
+        seed=42,
     )
 
     # Run evaluation with limit=2

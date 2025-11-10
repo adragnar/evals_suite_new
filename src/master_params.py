@@ -339,6 +339,7 @@ class ToyMcqaAbilityDifferenceParams(AbilityDifferenceParams):
     num_vulns: int
     allowed_vulns: str
     is_impossible_task: bool
+    seed: int
 
     @model_validator(mode="after")
     def check_params(self) -> Self:
