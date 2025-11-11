@@ -57,6 +57,7 @@ def toy_mbpp_ability_difference(
         sandbag_type=sandbag_type,
         ref_soln=ref_soln,
         cond_type=cond_type,
+        is_impossible_task=is_impossible_task,
     )
 
     user_prompt_template = renderer.render_jinja_template(
@@ -67,7 +68,8 @@ def toy_mbpp_ability_difference(
         template_name="user_prompt.jinja2",
         sandbag_type=sandbag_type,
         ref_soln=ref_soln,
-        prompt=user_prompt_template 
+        prompt=user_prompt_template,
+        is_impossible_task=is_impossible_task,
     )
     
     # 4. Create solver chain with system message and prompt template
@@ -147,7 +149,7 @@ if __name__ == "__main__":
     # Run evaluation with limit=1 and gpt-4o-mini model
     eval(
         task,
-        model="anthropic/claude-sonnet-4-20250514",
+        model="openai/gpt-4o-mini",
         limit=2,
         reasoning_tokens=1024,
         reasoning_effort="low",
