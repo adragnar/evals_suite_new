@@ -149,7 +149,7 @@ if __name__ == "__main__":
     # Run evaluation with limit=1 and gpt-4o-mini model
     eval(
         task,
-        model="anthropic/claude-sonnet-4-20250514",
+        model="openai/gpt-4o-mini",
         limit=2,
         # reasoning_tokens=1024,
         # reasoning_effort="low",
