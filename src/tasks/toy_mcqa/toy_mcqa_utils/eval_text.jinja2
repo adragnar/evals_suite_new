@@ -5,7 +5,10 @@ You are an expert biologist. Please answer the biology question given below, mak
 {prompt}
 ###END QUESTION###
 
-The following is an example of a different question & answer for your reference. Please format your answer in the same way as the example answer.
+
+The following are examples of different question & answer pairs for your reference.
+{% if output_spec == "explicit" %}
+ Please format your answer in the same way as the example answer.
 
 ###START EXAMPLE###
 ---QUESTION---
@@ -20,4 +23,147 @@ D) Puromycin
 Colchicine disrupts microtubule formation by binding to tubulin, which prevents spindle fiber assembly during mitosis. This blocks chromosome separation during cell division, resulting in cells with multiple sets of chromosomes (polyploidy).
 ANSWER: B
 ###END EXAMPLE###
+{% elif output_spec == "few_shot" %}
+###START EXAMPLE 1###
+---QUESTION---
+Which of the following agents will induce polyploidy in a dividing eukaryote?
+
+A) Penicillin
+B) Colchicine
+C) Tetracycline
+D) Puromycin
+
+---ANSWER---
+Colchicine disrupts microtubule formation by binding to tubulin, which prevents spindle fiber assembly during mitosis. This blocks chromosome separation during cell division, resulting in cells with multiple sets of chromosomes (polyploidy).
+ANSWER: B
+###END EXAMPLE 1###
+
+###START EXAMPLE 2###
+---QUESTION---
+The polytene chromosomes seen in Drosophila silvarentis with the aid of a light microscope are?
+
+A) not actively carrying out transcription
+B) produced only during mitosis
+C) produced by repeated rounds of DNA replication followed by nuclear division
+D) multiple copies of a single chromosome
+
+---ANSWER---
+Polytene chromosomes form when DNA replicates multiple times without cell division, creating many parallel copies of the same chromosome that remain synapsed together. This results in giant chromosomes with multiple DNA strands of the same chromosome aligned side-by-side, which is why they're visible under light microscopy.
+ANSWER: D
+###END EXAMPLE 2###
+
+###START EXAMPLE 3###
+---QUESTION---
+Antibiotics that affect bacterial cells interfere with all of the following EXCEPT
+
+A) peptidoglycan synthesis
+B) protein synthesis
+C) DNA synthesis
+D) reverse transcriptase
+
+---ANSWER---
+Colchicine disrupts microtubule formation by binding to tubulin, which prevents spindle fiber assembly during mitosis. This blocks chromosome separation during cell division, resulting in cells with multiple sets of chromosomes (polyploidy).
+Antibiotics target bacterial processes, not viral ones. Reverse transcriptase is an enzyme found in retroviruses (like HIV), not in bacteria, so antibiotics don't interfere with it. Bacterial antibiotics commonly target peptidoglycan synthesis, protein synthesis, and DNA synthesis.
+ANSWER: D
+###END EXAMPLE 3###
+
+###START EXAMPLE 4###
+---QUESTION---
+Which of the following processes occurs in the mitochondrial matrix?
+
+A) Glycolysis
+B) Electron transport chain
+C) Citric acid cycle
+D) Oxidative phosphorylation
+
+---ANSWER---
+The citric acid cycle (Krebs cycle) takes place in the mitochondrial matrix, where acetyl-CoA is oxidized to produce NADH, FADH2, and ATP. Glycolysis occurs in the cytoplasm, while the electron transport chain and oxidative phosphorylation occur in the inner mitochondrial membrane.
+ANSWER: C
+###END EXAMPLE 4###
+
+###START EXAMPLE 5###
+---QUESTION---
+A frameshift mutation is most likely to result from which of the following?
+
+A) Substitution of one nucleotide for another
+B) Deletion of three consecutive nucleotides
+C) Insertion of a single nucleotide
+D) Silent mutation in the third codon position
+
+---ANSWER---
+A frameshift mutation occurs when the reading frame of codons is shifted, changing all downstream amino acids. Insertion or deletion of nucleotides that are not multiples of three causes this shift. Inserting a single nucleotide shifts the entire reading frame, while deletion of three nucleotides removes one codon without shifting the frame.
+ANSWER: C
+###END EXAMPLE 5###
+
+###START EXAMPLE 6###
+---QUESTION---
+In prokaryotes, which of the following is required for the termination of transcription in some operons?
+
+A) Sigma factor
+B) Rho protein
+C) TATA box
+D) Poly-A polymerase
+
+---ANSWER---
+Rho protein is a termination factor in prokaryotes that recognizes specific sequences and causes RNA polymerase to dissociate from the DNA template, ending transcription. Sigma factor is involved in initiation, not termination. TATA boxes are eukaryotic promoter elements, and poly-A polymerase is involved in eukaryotic mRNA processing.
+ANSWER: B
+###END EXAMPLE 6###
+
+###START EXAMPLE 7###
+---QUESTION---
+Which of the following is NOT a characteristic of C4 plants?
+
+A) Spatial separation of carbon fixation and the Calvin cycle
+B) Kranz anatomy with bundle sheath cells
+C) Photorespiration rates similar to C3 plants
+D) Higher water use efficiency than C3 plants
+
+---ANSWER---
+C4 plants have evolved mechanisms to minimize photorespiration by concentrating CO2 around RuBisCO in bundle sheath cells. This adaptation significantly reduces photorespiration compared to C3 plants. C4 plants do exhibit spatial separation of initial carbon fixation and the Calvin cycle, possess Kranz anatomy, and have higher water use efficiency than C3 plants.
+ANSWER: C
+###END EXAMPLE 7###
+
+###START EXAMPLE 8###
+---QUESTION---
+The sodium-potassium pump in neurons transports ions against their concentration gradients. This is an example of:
+
+A) Facilitated diffusion
+B) Simple diffusion
+C) Primary active transport
+D) Osmosis
+
+---ANSWER---
+The sodium-potassium pump uses ATP directly to move Na+ and K+ ions against their concentration gradients (3 Na+ out, 2 K+ in). This direct use of ATP to transport molecules against their gradient defines primary active transport. Facilitated diffusion and simple diffusion move substances down their gradients without energy input.
+ANSWER: C
+###END EXAMPLE 8###
+
+###START EXAMPLE 9###
+---QUESTION---
+During meiosis I, homologous chromosomes separate during which phase?
+
+A) Prophase I
+B) Metaphase I
+C) Anaphase I
+D) Telophase I
+
+---ANSWER---
+Homologous chromosome pairs separate and move to opposite poles of the cell during anaphase I of meiosis. This is the reductional division that reduces chromosome number from diploid to haploid. In prophase I, homologs pair up; in metaphase I, they align at the cell's equator; and in telophase I, the cell completes division.
+ANSWER: C
+###END EXAMPLE 9###
+
+###START EXAMPLE 10###
+---QUESTION---
+Which enzyme is responsible for relieving the tension caused by unwinding of the DNA double helix during replication?
+
+A) Helicase
+B) DNA polymerase
+C) Topoisomerase
+D) Primase
+
+---ANSWER---
+Topoisomerase relieves the tension and supercoiling that builds up ahead of the replication fork as helicase unwinds the DNA double helix. It does this by making temporary breaks in the DNA backbone, allowing the strands to rotate and release tension. Helicase unwinds the DNA, DNA polymerase synthesizes new strands, and primase synthesizes RNA primers.
+ANSWER: C
+###END EXAMPLE 10###
+{% endif %}
+
 {% endif %}

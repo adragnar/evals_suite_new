@@ -28,6 +28,7 @@ def toy_mcqa_ability_difference(
     num_vulns: int,
     allowed_vulns: str,
     is_impossible_task: bool,
+    output_spec: Literal['explicit', 'few_shot'],
     ref_soln: bool,
     seed: int,
 ) -> Task:
@@ -41,6 +42,9 @@ def toy_mcqa_ability_difference(
         num_vulns: Number of vulnerabilities allowed
         allowed_vulns: String of allowed vulnerabilities (dash-separated)
         is_impossible_task: Whether the task is impossible to solve
+        output_spec: Output format specification ("explicit" or "few-shot")
+        ref_soln: Whether to use reference solution
+        seed: Random seed for vulnerability assignment
 
     Returns:
         InspectAI Task object configured for MCQA evaluation
@@ -106,6 +110,7 @@ def toy_mcqa_ability_difference(
     user_prompt_template = renderer.render_jinja_template(
         template_name="eval_text.jinja2",
         dataset_name=dataset_name_specific,
+        output_spec=output_spec,
     )
 
     user_prompt = renderer.render_jinja_template(
@@ -149,6 +154,7 @@ if __name__ == "__main__":
         num_vulns=0,
         allowed_vulns="spacing-ans_uncap",
         is_impossible_task=False,
+        output_spec="few_shot",
         ref_soln=False,
         seed=42,
     )
@@ -156,7 +162,7 @@ if __name__ == "__main__":
     # Run evaluation with limit=2
     eval(
         task,
-        model="anthropic/claude-sonnet-4-20250514",
-        reasoning_tokens=1024,
+        model="openai/gpt-4o-mini",
+        # reasoning_tokens=1024,
         limit=5,
     )
