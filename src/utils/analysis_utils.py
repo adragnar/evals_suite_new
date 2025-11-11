@@ -10,6 +10,7 @@ from src.utils.plotting_utils import get_eval_logs_list
 from inspect_ai.scorer import Scorer
 from typing import Callable
 from tqdm import tqdm
+import warnings
 
 def pull_metrics(logfile_name):
     results = {}
@@ -36,8 +37,12 @@ def pull_sample_values(logfile_name):
                     results[f"{score_name}__{key}_value"] = val
 
             results[f"{score_name}__answer"] = score_obj.answer
-            for key, val in score_obj.metadata.items():
-                results[f"{score_name}__{key}"] = val
+            try:
+                for key, val in score_obj.metadata.items():
+                    results[f"{score_name}__{key}"] = val
+            except:
+                warnings.warn(f"Scorer info in metadata not found for {score_name} not found in metadata")
+        
         samples.append(results)
     return samples
 
