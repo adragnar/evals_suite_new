@@ -345,6 +345,9 @@ class ToyMcqaAbilityDifferenceParams(AbilityDifferenceParams):
     @model_validator(mode="after")
     def check_params(self) -> Self:
         # Validate that the number of vulnerabilities matches
+        if self.is_impossible_task:
+            assert self.num_vulns == 0, "num_vulns must be 0 for impossible task"
+        
         assert len(self.allowed_vulns.split('-')) >= self.num_vulns, \
             f"Number of vulnerabilities ({self.num_vulns}) doesn't match allowed_vulns: {self.allowed_vulns}"
 
