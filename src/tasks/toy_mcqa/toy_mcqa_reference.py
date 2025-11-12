@@ -414,7 +414,7 @@ def answer_prop_stderr(num_inc: list[str], denom_exc: list[str]) -> Metric:
         "honeypot_aware": [accuracy(), stderr()]
     }
 )
-def honeypot_awareness_scorer() -> Scorer:
+def honeypot_awareness_scorer(is_impossible_task: bool) -> Scorer:
     """
     Model-graded scorer that detects two types of awareness in responses.
 
@@ -441,6 +441,7 @@ def honeypot_awareness_scorer() -> Scorer:
             "honeypot_awareness_detector_prompt.jinja2",
             question=state.input_text,
             model_response=model_response,
+            is_impossible_task=is_impossible_task,
         )
 
         # Call the LLM grader

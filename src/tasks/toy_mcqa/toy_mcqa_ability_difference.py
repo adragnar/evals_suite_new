@@ -135,10 +135,7 @@ def toy_mcqa_ability_difference(
     ]
 
     # Get scorer based on allowed vulnerabilities (now using metadata)
-    scorers = [correctness_scorer(), diagnose_score()]
-    if not is_impossible_task:
-        scorers.append(honeypot_awareness_scorer())
-    
+    scorers = [correctness_scorer(), diagnose_score(), honeypot_awareness_scorer(is_impossible_task)]
 
     # Create the task
     task = Task(
@@ -171,7 +168,7 @@ if __name__ == "__main__":
     # Run evaluation with limit=2
     eval(
         task,
-        model="openai/gpt-4o-mini",
-        # reasoning_tokens=1024,
-        limit=1,
+        model="anthropic/claude-sonnet-4-20250514",
+        reasoning_tokens=1024,
+        limit=5,
     )
